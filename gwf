@@ -1,9 +1,0 @@
-## GWF workflow
-
-'''{python} 
-'''
-Author: Ole S Hansen
-gwf workflow to parse all GWAS sumstats in data folder and generate PRS from them using LDpred2-auto
-'''
-
-'''
