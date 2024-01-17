@@ -20,9 +20,9 @@ args = commandArgs(trailingOnly = TRUE)
 sumstats = fread(args[1])
 output = args[2]
 
-sumstats = fread("data/daner_bip_pgc3_nm_noukbiobank") # For testing
+# sumstats = fread("data/daner_bip_pgc3_nm_noukbiobank") # For testing
 head(sumstats)
-library(Dict)
+
 #Renaming columns by fist creating a dict with the new and pissble original colnames
 colname_dict <- Dict$new("a0" = c("a1","allele_1","allele1", "eff_allele", "effect_allele", "ea", "reference_allele", "testallele"),
                   "a1" = c("a2", "allele_2", "allele2", "alt_allele", "alternative_allele", "other_allele", "nea", "oa"),
