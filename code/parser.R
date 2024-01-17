@@ -9,6 +9,8 @@
 #'   - Update dict to contain names from MungeSumstats too
 #'   - Check if continuous
 
+## TEST
+
 suppressPackageStartupMessages({
   library(dplyr)
   library(Dict)
