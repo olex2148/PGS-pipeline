@@ -102,7 +102,7 @@ if( all(is.na(is_bad)) ){               # if neither info nor freq exist
 
 # Saving QC in plot if possible
 if( length(sd_af) > 1 ){
-  p <- ggplot(slice_sample(data.frame(sd_af, ad_ss2, is_bad), n = 50e4)) +
+  p <- ggplot(slice_sample(data.frame(sd_af, sd_ss2, is_bad), n = 50e4)) +
     geom_point(aes(sd_af, sd_ss2, color = is_bad), alpha = 0.5) +
     theme_bigstatsr(0.9) + 
     scale_color_viridis_d(direction = -1) +
