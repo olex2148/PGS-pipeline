@@ -47,6 +47,7 @@ info <- readRDS(runonce::download_file(
   dir = hapmap_path, fname = "map_hm3_plus.rds"))
 
 # Finding Hapmap and iPSYCH overlap with sumstats --------------------------------------------------------------
+
 info_ipsych_external <- snp_match(
   sumstats, 
   dosage$map)                                                                                      # iPSYCH-external
@@ -100,27 +101,32 @@ if( all(is.na(is_bad)) ){               # if neither info nor freq exist
   df_beta <- info_snp2[!is_bad, ]       # If one of them does
 }
 
-#TODO: Make png non-hard coded
-png(filename = "")
-ggplot(slice_sample(data.frame(sd_af, ad_ss2, is_bad), n = 50e4)) +
-  geom_point(aes(sd_af, sd_ss2, color = is_bad), alpha = 0.5) +
-  theme_bigstatsr(0.9) + 
-  scale_color_viridis_d(direction = -1) +
-  geom_abline(linetype = 2, color = "red", size = 1.5) +
-  labs(x = "Standard deviations in the reference set",
-       y = "Standard deviations derived from the summary statistics",
-       color = "To remove?")
-dev.off()
+# Saving QC in plot if possible
+if( length(sd_af) > 1 ){
+  p <- ggplot(slice_sample(data.frame(sd_af, ad_ss2, is_bad), n = 50e4)) +
+    geom_point(aes(sd_af, sd_ss2, color = is_bad), alpha = 0.5) +
+    theme_bigstatsr(0.9) + 
+    scale_color_viridis_d(direction = -1) +
+    geom_abline(linetype = 2, color = "red", size = 1.5) +
+    labs(x = "Standard deviations in the reference set",
+         y = "Standard deviations derived from the summary statistics",
+         color = "To remove?")
+  ggsave(paste0(base_path, "_QC.jpeg", p))
+}
 
+# Running LDSC -------------------------------------------------------------------------------------------------------
+cat("Running LDSC \n")
 ldsc <- with(df_beta, snp_ldsc(ld, ld_size = length(ld),
-                               chi2 = (beta / beta_se)^2, #qnorm(1-p/2)^2,
+                               chi2 = (beta / beta_se)^2, 
                                sample_size = n_eff,
                                ncores = nb_cores()))
-h2_est <- ldsc[["h2"]]
-h2_liab <- h2_est * coef_to_liab(K_pop = 0.05) #TODO: Remove - k_pop is specific, just for testing
+h2_init <- ldsc[["h2"]]
+cat("LDSC-estimated heritability on the observed scale:", h2_init, "\n")
 
-# LDpred2-auto
+# Reading in LD blocks -----------------------------------------------------------------------------------------------
 tmp <- tempfile(tmpdir = "steps/corr")
+
+cat("Reading in LD blocks for chromosome ")
 for (chr in 1:22) {
   
   cat(chr, "..", sep = "")
@@ -132,7 +138,7 @@ for (chr in 1:22) {
   ## indices in corr_chr
   ind.chr3 <- match(ind.chr2, which(info$chr == chr))
   
-  corr_chr <- readRDS(paste0("~/NCRR-PRS/faststorage/florian/ldpred2-inference/data/corr_hm3_plus/LD_with_blocks_chr", chr, ".rds"))[ind.chr3, ind.chr3]
+  corr_chr <- readRDS(paste0(ld_blocks, chr, ".rds"))[ind.chr3, ind.chr3]
   
   if (chr == 1) {
     corr <- as_SFBM(corr_chr, tmp, compact = TRUE)
@@ -140,19 +146,25 @@ for (chr in 1:22) {
     corr$add_columns(corr_chr, nrow(corr))
   }
 }
+cat("\n")
 
+# LDpred2-auto ------------------------------------------------------------------------------------------------------
 coef_shrink <- 0.8
 
+cat("Running LDpred2-auto with shrinkage coefficient", coef_shrink, "\n")
 multi_auto <- snp_ldpred2_auto(
-  corr, df_beta, h2_init = h2_est,
+  corr, df_beta, h2_init = h2_init,
   vec_p_init = seq_log(1e-4, 0.2, length.out = 50), burn_in = 500, num_iter = 500,
   use_MLE = FALSE, # for power/convergence issues, alpha
   report_step = 20, ncores = nb_cores(), allow_jump_sign = FALSE, shrink_corr = coef_shrink)
 
-saveRDS(list(ldsc = ldsc, ldpred2 = multi_auto),
-        auto_model_out)
-saveRDS(list(ldsc = ldsc, ldpred2 = multi_auto),
-        "results/models/adhd_test.rds")
+cat("Running lassosum \n")
+lasso <- snp_lassosum2(corr, df_beta, ncores = nb_cores())
+
+saveRDS(list(ldsc = ldsc, ldpred2 = multi_auto, lassosum = lasso),
+        paste0(base_path, "_raw_models.rds"))
+
+# QC on chains from auto --------------------------------------------------------------------------------------------
 
 ###### Predicting in iPSYCH
 # Reading in PCs and some iPSYCH meta info for covariates
