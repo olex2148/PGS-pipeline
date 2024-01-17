@@ -65,6 +65,8 @@ def parse_sumstats(inputfile):
 	# Command to be run in the terminal
 	spec = f'''
 	
+	cd ~/NCRR-PRS/faststorage/osh/PGS/pgs_workflow/
+
 	Rscript code/parser.R {inputfile} {outputfile}
 	
 	'''
@@ -94,7 +96,7 @@ def compute_pgs(inputfile):
 
 	spec = f'''
 
-	mkdir -p resulst/{base}
+	mkdir -p results/{base}
 
 	Rscript code/pgs_model.R {inputfile} {base_path}
 	
