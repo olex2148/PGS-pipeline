@@ -1,56 +1,104 @@
-library(bigsnpr)
-library(dplyr)
-library(ggplot2)
+#' LDpred2-auto and lassosum2 on parsed sumstats
+#' 
+#' @author Ole Sahlholdt Hansen
+#' @date
+#' 
+#' @description This script takes two arguments: An input file of parsed sumstats
+#' (output of parser.R) as well as a base name for the output  files - as there are several
+#' (models, scores, figures, følgefil)
+#' 
+#' @Todo
+#'    - Make general for continous traits as well
+#'    - Move n_eff check to parser
+
+suppressPackageStartupMessages({
+  library(bigsnpr)
+  library(dplyr)
+  library(ggplot2)
+  library(testit)
+  library(openxlsx)
+  library(data.table)
+})
 
 # Command line arguments for this script
 args = commandArgs(trailingOnly = TRUE)
 parsed_sumstats <- args[1]
-auto_model_out <- args[2]
-scores_out <- args[3]
-parameters_out <- args[4]
+base_path <- args[2]
+base_name <- sapply(strsplit(base_path, split='/', fixed=TRUE), function(x) (x[3])) # Removing the path in front of base name
 
-setwd("~/NCRR-PRS/faststorage/osh/PGS/updates_and_adds/")
+setwd("~/NCRR-PRS/faststorage/osh/PGS/pgs_workflow/")
+source("code/input_paths.R")
 set.seed(72)
 
-# Reading in ext sumstats
-# df = readRDS(parsed_sumstats)
-sumstats = readRDS("steps/parsed_sumstats/test_adhd.rds") #Example
+# Loading data -------------------------------------------------------------------------------------------------
 
-# Reading in iPSYCH
-dosage <-  snp_attach("~/iPSYCH2015/HRC_Imputed/bigsnp_r_format/dosage_ipsych2015.rds")
+# Reading in ext sumstats
+df = readRDS(parsed_sumstats)
+# sumstats = readRDS("steps/parsed_sumstats/test_adhd.rds") # Example
+
+# Reading in iPSYCH data
+dosage <-  snp_attach(dosage_path)
 dosage$map <- dosage$map %>% 
   rename("chr" = "CHR", "pos" = "POS", "a0" = "a1", "a1" = "a2")
 
 # Reading in HapMap3+
 info <- readRDS(runonce::download_file(
   "https://figshare.com/ndownloader/files/37802721",
-  dir = "steaps/hapmap3+", fname = "map_hm3_plus.rds"))
+  dir = hapmap_path, fname = "map_hm3_plus.rds"))
 
-# Finding Hapmap and iPSYCH overlap with sumstats
-info_ipsych_external <- snp_match(sumstats, dosage$map) # iPSYCH-external
-info_snp <- snp_match(info_ipsych_external[, c("pos","chr","a0","a1","beta","beta_se","freq","p","n_eff", "info")], info) #hapmap overlap with remaining
+# Finding Hapmap and iPSYCH overlap with sumstats --------------------------------------------------------------
+info_ipsych_external <- snp_match(
+  sumstats, 
+  dosage$map)                                                                                      # iPSYCH-external
 
-# QC
-# TODO: Add check for the presence of the info and freq column
+info_snp <- snp_match(
+  info_ipsych_external[, c("pos","chr","a0","a1","beta","beta_se","freq","p","n_eff", "info")], 
+  info)                                                                                           # Hapmap overlap with remaining
 
-# Removing SEs below zero to avoid errors in sd_ss
+# QC -----------------------------------------------------------------------------------------------------------
+
+# First checking that the effective population size is in the parsed sumstats
+assert("No effective population size in parsed sumstats",
+       !all(is.na(info_snp$n_eff)))
+
+# Filtering on beta_se and n_eff which should be present in all sumstats
 info_snp2 <- info_snp %>% 
-  filter(beta_se > 0)
+  filter(beta_se > 0 & n_eff > (0.7 * max(n_eff)))
 
-sd_af <- with(info_snp2, sqrt(2 * freq * (1 - freq)))
-sd_ss <- with(info_snp2, 2 / sqrt(n_eff * beta_se^2 + beta^2))
-sd_ss2 <- sd_ss / quantile(sd_ss, 0.999) * sqrt(0.5) 
-is_bad <- 
-  sd_ss2 < (0.5 * sd_af) |
-  sd_ss2 > (sd_af + 0.1) |
-  sd_ss2 < 0.05 |
-  sd_af < 0.05 |
-  info_snp2$n_eff < (0.7 * max(info_snp2$n_eff))|
-  info_snp2$info < 0.7
+# Other QC steps that cannot be performed in all sumstats (if they don't contain freq and/or info)
+is_bad <- NA
+sd_af <- NA
 
-table(is_bad)
+if( !all(is.na(info_snp2$freq)) ){         # If freq exists
+  
+  sd_af <- with(info_snp2, sqrt(2 * freq * (1 - freq)))
+  sd_ss <- with(info_snp2, 2 / sqrt(n_eff * beta_se^2 + beta^2))
+  sd_ss2 <- sd_ss / quantile(sd_ss, 0.999) * sqrt(0.5) 
+  
+  is_bad <- 
+    sd_ss2 < (0.5 * sd_af) |
+    sd_ss2 > (sd_af + 0.1) |
+    sd_ss2 < 0.05 |
+    sd_af < 0.05
+  
+} else {
+  cat("No allele frequencies available in summary statistics. QC step not performed. \n")
+}
 
-df_beta <- info_snp2[!is_bad, ]
+if( !all(is.na(info_snp2$info)) ){       # If info exists
+  is_bad <- is_bad | 
+    info_snp2$info < 0.7
+} else {
+  cat("No INFO scores available in summary statistics. QC step not performed. \n")
+}
+
+cat("Number of variants to be filtered out:", sum(is_bad) + (nrow(info_snp) - nrow(info_snp2)), "\n")
+
+if( all(is.na(is_bad)) ){               # if neither info nor freq exist
+  df_beta <- info_snp2
+} else {
+  df_beta <- info_snp2[!is_bad, ]       # If one of them does
+}
 
 #TODO: Make png non-hard coded
 png(filename = "")
