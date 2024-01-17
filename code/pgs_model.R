@@ -31,8 +31,8 @@ set.seed(72)
 
 # Loading data -------------------------------------------------------------------------------------------------
 
-# Reading in ext sumstats
-df = readRDS(parsed_sumstats)
+# Reading in parsed sumstats
+sumstats = readRDS(parsed_sumstats)
 # sumstats = readRDS("steps/parsed_sumstats/test_adhd.rds") # Example
 
 # Reading in iPSYCH data
