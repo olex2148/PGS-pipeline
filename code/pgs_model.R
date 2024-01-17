@@ -166,6 +166,97 @@ saveRDS(list(ldsc = ldsc, ldpred2 = multi_auto, lassosum = lasso),
 
 # QC on chains from auto --------------------------------------------------------------------------------------------
 
+range <- sapply(multi_auto, function(auto) diff(range(auto$corr_est)))
+keep <- (range > (0.95 * quantile(range, 0.95)))
+
+# Making sure some chains were kept
+assert("No chains passed QC", sum(keep != 0))
+
+cat(sum(keep), "chains passed QC \n")
+
+# Average of kept chains
+beta_auto <- rowMeans(sapply(multi_auto[keep], function(auto) auto$beta_est))
+
+# Inspecting the first chain to pass QC (arbitrary)
+auto <- multi_auto[keep][[1]]
+
+q <- plot_grid(
+  qplot(y = auto$path_p_est) + 
+    theme_bigstatsr() +
+    geom_hline(yintercept = auto$p_est, col = "blue") +
+    scale_y_log10() + 
+    labs(y = "p") + 
+    qplot(y = auto$path_h2_est) +
+    theme_bigstatsr() +
+    geom_hline(yintercept = auto$h2_est, col = "blue") +
+    labs(y = "h2"),
+  ncol = 1, align = "hv"
+)
+ggsave(paste0(base_path, "_1st_kept_chain.jpeg"), q)
+
+# Saving parameters ------------------------------------------------------------------------------------------------
+
+all_h2 <- sapply(multi_auto[keep], function(auto) tail(auto$path_h2_est, 500))
+quantile(all_h2, c(0.5, 0.025, 0.975))
+
+all_p <- sapply(multi_auto[keep], function(auto) tail(auto$path_p_est, 500))
+quantile(all_p, c(0.5, 0.025, 0.975))
+
+# MLE
+all_alpha <- sapply(multi_auto[keep], function(auto) tail(auto$path_alpha_est, 500))
+quantile(all_alpha, c(0.5, 0.025, 0.975))
+
+bsamp <- lapply(multi_auto[keep], function(auto) auto$sample_beta)
+all_r2 <- do.call("cbind", lapply(seq_along(bsamp), function(ic) {
+  b1 <- bsamp[[ic]]
+  
+  Rb1 <- apply(b1, 2, function(x)
+    coef_shrink * bigsparser::sp_prodVec(corr, x) + (1 - coef_shrink) * x)
+  b2 <- do.call("cbind", bsamp[-ic])
+  
+  b2Rb1 <- as.matrix(Matrix::crossprod(b2, Rb1))
+}))
+
+quantile(all_r2, c(0.5, 0.025, 0.975))
+
+saveRDS(list(r2 = all_r2, h2 = all_h2, alpha = all_alpha, p = all_p),
+        paste0(base_path, "auto_parameters.rds"))
+
+# Getting mean h2 and p from chains and saving følgefil
+h2_mean <- mean(all_h2)
+h2_se <- sd(all_h2) / sqrt(sum(keep)) # sd / sqrt(n)
+
+p_mean <- mean(all_p)
+p_se <- sd(all_p) / sqrt(sum(keep)) # sd / sqrt(n)
+
+foelgefil <- data.frame(
+  id = base_name,
+  restrictions = NA,
+  reported_trait = NA,
+  pubmed_id = NA,
+  first_author = NA,
+  journal = NA,
+  title = NA,
+  publication_date = NA,
+  N = NA,
+  Ncase = NA,
+  Ncontrol = NA,
+  se = "beta",
+  M_or = nrow(sumstats), # Variants in the original sumstats
+  M_m = nrow(info_snp),  # Overlap with HapMap and iPSYCH
+  M_qc = nrow(df_beta),  # Variants after QC
+  m_h2 = h2_mean,        # Ldpred2 h2 mean from kept chains
+  se_he = h2_se,         # h2 se
+  m_p = p_mean,          # LDpred2 polygenicity mean from kept chains
+  se_p = p_se,           # p se
+  h2_init = h2_init      # LDSC h2
+  
+)
+
+write.xlsx(foelgefil, 
+           file = paste0("results/følgefiler/", base_name, "_følgefil.xlsx"), 
+           rownames = FALSE)
+
 ###### Predicting in iPSYCH
 # Reading in PCs and some iPSYCH meta info for covariates
 pcs <- readRDS("~/iPSYCH2015/HRC_Imputed/bigsnp_r_format/PC.rds")
@@ -191,32 +282,7 @@ ipsych_sumstats_index <- snp_match(
   df_beta[, c("pos","chr","a0","a1","beta","beta_se","freq","p","n_eff", "info")], # Only some of the cols, to avoid duplicate NUM_SS
   dosage$map)
 
-# QC on chains from auto
-range <- sapply(multi_auto, function(auto) diff(range(auto$corr_est)))
-keep <- (range > (0.95 * quantile(range, 0.95)))
-sum(keep)
 
-# Average of kept chains
-beta_auto <- rowMeans(sapply(multi_auto[keep], function(auto) auto$beta_est))
-
-#Inspect a chain that has passed QC
-#TODO: Make universal, and save png of chains
-auto <- multi_auto[[8]]
-#TODO: make png name non-hard coded
-png(filename = "")
-plot_grid(
-  qplot(y = auto$path_p_est) + 
-    theme_bigstatsr() +
-    geom_hline(yintercept = auto$p_est, col = "blue") +
-    scale_y_log10() + 
-    labs(y = "p") + 
-  qplot(y = auto$path_h2_est) +
-    theme_bigstatsr() +
-    geom_hline(yintercept = auto$h2_est, col = "blue") +
-    labs(y = "h2"),
-  ncol = 1, align = "hv"
-)
-dev.off()
   
 # Compute scores for all individuals in iPSYCH
 pred_auto <- big_prodVec(G,
@@ -230,32 +296,7 @@ colnames(scores) <- c("family.ID", "sample.ID", "PGS")
 saveRDS(scores, scores_out)
 
 # Save parameters
-all_h2 <- sapply(multi_auto[keep], function(auto) tail(auto$path_h2_est, 500))
-quantile(all_h2, c(0.5, 0.025, 0.975))
 
-all_p <- sapply(multi_auto[keep], function(auto) tail(auto$path_p_est, 500))
-quantile(all_p, c(0.5, 0.025, 0.975))
-
-#MLE
-all_alpha <- sapply(multi_auto[keep], function(auto) tail(auto$path_alpha_est, 500))
-quantile(all_alpha, c(0.5, 0.025, 0.975))
-
-bsamp <- lapply(multi_auto[keep], function(auto) auto$sample_beta)
-all_r2 <- do.call("cbind", lapply(seq_along(bsamp), function(ic) {
-  b1 <- bsamp[[ic]]
-  
-  Rb1 <- apply(b1, 2, function(x)
-    coef_shrink * bigsparser::sp_prodVec(corr, x) + (1 - coef_shrink) * x)
-  b2 <- do.call("cbind", bsamp[-ic])
-  
-  b2Rb1 <- as.matrix(Matrix::crossprod(b2, Rb1))
-}))
-
-quantile(all_r2, c(0.5, 0.025, 0.975))
-
-#TODO: import code to make metrics file, save not in rds
-saveRDS(list(r2 = all_r2, h2 = all_h2, alpha = all_alpha, p = all_p),
-        parameters)
   
 
 
