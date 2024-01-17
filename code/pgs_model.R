@@ -8,7 +8,7 @@
 #' (models, scores, figures, følgefil)
 #' 
 #' @Todo
-#'    - Make general for continous traits as well
+#'    - Make general for continuous traits as well
 #'    - Move n_eff check to parser
 
 suppressPackageStartupMessages({
@@ -257,45 +257,48 @@ write.xlsx(foelgefil,
            file = paste0("results/følgefiler/", base_name, "_følgefil.xlsx"), 
            rownames = FALSE)
 
-###### Predicting in iPSYCH
-# Reading in PCs and some iPSYCH meta info for covariates
-pcs <- readRDS("~/iPSYCH2015/HRC_Imputed/bigsnp_r_format/PC.rds")
-meta <- bigreadr::fread2("~/Register/2019_06/csv/ipsych2015design_v2.csv")
+# Predicting in iPSYCH ------------------------------------------------------------------------------------------------------
 
-# Compute sex and age
-# TODO: Remove adhd2015I, only used for testing
-df <- dosage$fam %>% 
-  left_join(meta[, c("fdato", "gender", "pid", "adhd2015I")], by = c("family.ID" = "pid")) %>% 
+# Reading in PCs and info for covariates
+pcs <- readRDS(pcs_path)
+meta <- fread(meta_path)
+
+# Computing sex and age
+covariates_df <- dosage$fam %>% 
+  left_join(meta[, c("fdato", "gender", "pid")], by = c("family.ID" = "pid")) %>% 
   mutate(sex = ifelse(gender == "F", 1, 0),
          # Time diff in years between present date and fdate
-         age = lubridate::time_length(difftime(as.Date(Sys.Date(), format = "%d/%m/%Y"), as.Date(fdato, format = "%d/%m/%Y")), "years"))
+         age = lubridate::time_length(
+           difftime(
+             as.Date(Sys.Date(), format = "%d/%m/%Y"), 
+             as.Date(fdato, format = "%d/%m/%Y")), 
+           "years")) %>% 
+  select(-c(paternal.ID, maternal.ID, affection, gender))
 
 # Checking order is preserved
-identical(dosage$fam$sample.ID, df$sample.ID)
+# identical(dosage$fam$sample.ID, covariates_df$sample.ID)
 
-cov <- cbind(df$sex, df$age, df$is_2012, pcs)
+cov <- cbind(covariates_df$sex, covariates_df$age, covariates_df$is_2012, pcs)
 
 G <- dosage$genotypes
 
-# Finding indices of variants in G which is used in model
+# Finding indices of variants in G which is used in models
 ipsych_sumstats_index <- snp_match(
   df_beta[, c("pos","chr","a0","a1","beta","beta_se","freq","p","n_eff", "info")], # Only some of the cols, to avoid duplicate NUM_SS
   dosage$map)
-
-
   
 # Compute scores for all individuals in iPSYCH
 pred_auto <- big_prodVec(G,
                          beta_auto, # Model
                          ind.col = ipsych_sumstats_overlap[["_NUM_ID_"]], # Indices in G of snps used in auto
                          ncores = nb_cores())
-#cbind with family and sample ID and save
 
-scores <- as.data.frame(cbind(df$family.ID, df$sample.ID, as.numeric(pred_auto)))
-colnames(scores) <- c("family.ID", "sample.ID", "PGS")
+# cbind with family and sample ID and save
+scores <- as.data.frame(cbind(covariates_df$family.ID, covariates_df$sample.ID, as.numeric(pred_auto)))
+colnames(scores) <- c("family.ID", "sample.ID", "ldpred2_pgs")
 saveRDS(scores, scores_out)
 
-# Save parameters
+cat("Finished computing scores. Models, auto model paramters, følgefil, and auto scores were saved in 4 distinct files in", base_path, "/")
 
   
 
