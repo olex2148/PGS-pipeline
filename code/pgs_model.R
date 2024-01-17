@@ -26,7 +26,7 @@ parsed_sumstats <- args[1]
 base_path <- args[2]
 base_name <- sapply(strsplit(base_path, split='/', fixed=TRUE), function(x) (x[3])) # Removing the path in front of base name
 
-source("code/input_paths.R")
+source("code/aux_scripts/input_paths.R")
 set.seed(72)
 
 # Loading data -------------------------------------------------------------------------------------------------
