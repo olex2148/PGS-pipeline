@@ -26,7 +26,6 @@ parsed_sumstats <- args[1]
 base_path <- args[2]
 base_name <- sapply(strsplit(base_path, split='/', fixed=TRUE), function(x) (x[3])) # Removing the path in front of base name
 
-setwd("~/NCRR-PRS/faststorage/osh/PGS/pgs_workflow/")
 source("code/input_paths.R")
 set.seed(72)
 

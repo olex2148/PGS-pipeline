@@ -1,14 +1,25 @@
-library(dplyr)
-library(Dict)
+#' Generalized script for parsing many different summary statistics
+#' 
+#' @author Ole Sahlholdt Hansen
+#' @date
+#' 
+#' @description This script takes two arguments: An input file of sumstats as well as an output name 
+#' 
+#' @Todo
+
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(Dict)
+  library(data.table)
+})
 
 # Command line arguments for this script
-# args = commandArgs(trailingOnly=True)
-#df = read.table(args[1], header = TRUE) #read.table slow, revisit fread, arrow not useful
-# outputs = args[2]
+args = commandArgs(trailingOnly = TRUE)
+sumstats = fread(args[1])
+output = args[2]
 
-setwd("~/NCRR-PRS/faststorage/osh/PGS/updates_and_adds/")
-df = read.table("~/NCRR-PRS/faststorage/ExtSumStats/ADHD/daner_ADHD_meta_PGCeur_v1_filtered.meta", header = TRUE) # For testing
-head(df)
+# sumstats = read.table("", header = TRUE) # For testing
+head(sumstats)
 
 #Renaming columns by fist creating a dict with the new and pissble original colnames
 idkey <- Dict$new("a0" = c("a1","allele_1","allele1", "eff_allele", "effect_allele", "ea", "testallele"),
@@ -30,52 +41,52 @@ idkey <- Dict$new("a0" = c("a1","allele_1","allele1", "eff_allele", "effect_alle
                   "n_total" = c("totaln", "totalsamplesize", "n", "total_n"),
                   "z" = c("zscore","z_score","z-score"))
 
-colnames(df) <- tolower(colnames(df)) #reduce number of possible versions, lower case letters
+colnames(sumstats) <- tolower(colnames(sumstats)) #reduce number of possible versions, lower case letters
 
 # Renaming for all keys in the above dict: Looping over keys in dict, to see if any of their vals are present in colnames
 for (key in idkey$keys) {
-  colnames(df[colnames(df) %in% idkey[key]] <- key)
+  colnames(sumstats[colnames(sumstats) %in% idkey[key]] <- key)
   
 }
 
 #TODO: check if continous, e.g. BMI, in which case just use N
-# check if df has OR, freq, and effective N
-if("or" %in% colnames(df)){
-  df$beta = log(df$or);
-  df$beta_se = df(df$beta/qnorm(1-df$p/2)) #beta/z
+# check if sumstats has OR, freq, and effective N
+if("or" %in% colnames(sumstats)){
+  sumstats$beta = log(sumstats$or);
+  sumstats$beta_se = sumstats(sumstats$beta/qnorm(1-sumstats$p/2)) #beta/z
 }
 
 #TODO: ad if only total N
-if(!"n_eff" %in% colnames(df)){
-  if("n_cases" %in% colnames(df)){
-    df$n_eff = 4/(1/df$n_cases + 1/df$n_controls)
+if(!"n_eff" %in% colnames(sumstats)){
+  if("n_cases" %in% colnames(sumstats)){
+    sumstats$n_eff = 4/(1/sumstats$n_cases + 1/sumstats$n_controls)
   } else {
-      if("half_neff" %in% colnames(df)){
-        df$n_eff = df$half_neff * 2
+      if("half_neff" %in% colnames(sumstats)){
+        sumstats$n_eff = sumstats$half_neff * 2
       } else {
-        df$n_eff = NA
+        sumstats$n_eff = NA
     }
   }
 }
 
-if(!"freq" %in% colnames(df)){
-  if("freq_cases" %in% colnames(df)) {
-    df$freq = (dffreq_cases + df$freq_controls)/2
+if(!"freq" %in% colnames(sumstats)){
+  if("freq_cases" %in% colnames(sumstats)) {
+    sumstats$freq = (sumstatsfreq_cases + sumstats$freq_controls)/2
   } else {
-    df$freq = NA
+    sumstats$freq = NA
   } 
 }
 
-if(!"info" %in% colnames(df)){
-  df$info = NA #So it's created for the command below if it's not already in sumstats
+if(!"info" %in% colnames(sumstats)){
+  sumstats$info = NA #So it's created for the command below if it's not already in sumstats
 }
 
-sumstats <- 
+parsed_sumstats <- sumstats %>% 
   select(chr, pos, a0, a1, beta, beta_se, p, n_eff, freq, info)
 
 # Checking the renaming
-head(sumstats)
+head(parsed_sumstats)
 
-# Saving the parserd DF in the outputfile
-# saveRDS(sumstats, output)
-saveRDS(sumstats, "steps/parsed_sumstats/test_adhd.rds") # for testing
+# Saving the parserd sumstats in the outputfile
+# saveRDS(parsed_sumstats, output)
+saveRDS(parsed_sumstats, "steps/parsed_sumstats/test_adhd.rds") # for testing
