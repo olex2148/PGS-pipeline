@@ -19,6 +19,7 @@ Todo:
 
 from gwf import Workflow, AnonymousTarget
 import os, re, glob
+from datetime import date
 gwf = Workflow()
 
 ### Helper functions
@@ -77,14 +78,15 @@ def compute_pgs(inputfile):
 	'''
 	Template for running the r script "pgs_model.R" which computes PGS models using parsed sumstats
 	'''
+	today = date.today()
 
 	base = modpath(inputfile, parent=(''), suffix=('_parsed.rds', ''))      # Getting the base name from the inputfile 
 	base_path = f'results/{base}/{base}'                                    # New path with sumstat-specific folder (and filename without suffix)
 
-	model_out = f'{base_path}_raw_models.rds'
+	model_out = f'{base_path}_raw_models.rds'                               # Models, parameters, and scores are put in a folder specific to the sumstats
 	scores_out = f'{base_path}_scores.rds'
 	parameters_out = f'{base_path}_auto_paramters.rds'
-	foelgefil = f'results/følgefiler/{base}_følgefil.xlsx'
+	foelgefil = f'results/følgefiler/{today}/{base}_følgefil.xlsx'          # Følgefil is put in a separate folder specific to the batch run (date in folder name)
 
 	inputs = [inputfile]
 	outputs = [model_out, scores_out, parameters_out, foelgefil]
@@ -97,6 +99,7 @@ def compute_pgs(inputfile):
 	spec = f'''
 
 	mkdir -p results/{base}
+	mkdir -p results/følgefiler/{today}
 
 	Rscript code/pgs_model.R {inputfile} {base_path}
 	
