@@ -102,15 +102,17 @@ if( all(is.na(is_bad)) ){               # if neither info nor freq exist
 
 # Saving QC in plot if possible
 if( length(sd_af) > 1 ){
+  
   p <- ggplot(slice_sample(data.frame(sd_af, sd_ss2, is_bad), n = 50e4)) +
     geom_point(aes(sd_af, sd_ss2, color = is_bad), alpha = 0.5) +
     theme_bigstatsr(0.9) + 
     scale_color_viridis_d(direction = -1) +
-    geom_abline(linetype = 2, color = "red", size = 1.5) +
+    geom_abline(linetype = 2, color = "red", linewidth = 1.5) +
     labs(x = "Standard deviations in the reference set",
          y = "Standard deviations derived from the summary statistics",
          color = "To remove?")
-  ggsave(paste0(base_path, "_QC.jpeg", p))
+  
+  ggsave(paste0(base_path, "_QC.jpeg"), p)
 }
 
 # Running LDSC -------------------------------------------------------------------------------------------------------
