@@ -20,11 +20,11 @@ args = commandArgs(trailingOnly = TRUE)
 sumstats = fread(args[1])
 output = args[2]
 
-# sumstats = read.table("", header = TRUE) # For testing
+sumstats = fread("data/daner_bip_pgc3_nm_noukbiobank") # For testing
 head(sumstats)
-
+library(Dict)
 #Renaming columns by fist creating a dict with the new and pissble original colnames
-idkey <- Dict$new("a0" = c("a1","allele_1","allele1", "eff_allele", "effect_allele", "ea", "reference_allele", "testallele"),
+colname_dict <- Dict$new("a0" = c("a1","allele_1","allele1", "eff_allele", "effect_allele", "ea", "reference_allele", "testallele"),
                   "a1" = c("a2", "allele_2", "allele2", "alt_allele", "alternative_allele", "other_allele", "nea", "oa"),
                   "chr" = c("chromosome", "chr_id", "chrom"),
                   "pos" = c("bp", "position", "bp_pos","base_pair_location", "posgrch37"),
@@ -46,8 +46,8 @@ idkey <- Dict$new("a0" = c("a1","allele_1","allele1", "eff_allele", "effect_alle
 colnames(sumstats) <- tolower(colnames(sumstats)) # To reduce number of possible versions
 
 # Renaming for all keys in the above dict: Looping over keys in dict, to see if any of their vals are present in colnames
-for (key in idkey$keys) {
-  colnames(sumstats[colnames(sumstats) %in% idkey[key]] <- key)
+for (key in colname_dict$keys) {
+  colnames(sumstats)[colnames(sumstats) %in% colname_dict[key]] <- key
   
 }
 
@@ -56,7 +56,7 @@ colnames(sumstats)[grep("^fr?q_a_", colnames(sumstats))] <- "freq_cases"
 colnames(sumstats)[grep("^fr?q_u_", colnames(sumstats))] <- "freq_controls"
 
 # check if sumstats has OR, freq, and effective N
-if("or" %in% colnames(sumstats)){
+if("or" %in% colnames(sumstats) & !"beta" %in% colnames(sumstats)){
   sumstats$beta = log(sumstats$or);
   sumstats$beta_se = sumstats$beta/qnorm(1-sumstats$p / 2) # beta/z
 }
@@ -75,7 +75,7 @@ if(!"n_eff" %in% colnames(sumstats)){
 
 if(!"freq" %in% colnames(sumstats)){
   if("freq_cases" %in% colnames(sumstats)) {
-    sumstats$freq = (sumstatsfreq_cases + sumstats$freq_controls)/2
+    sumstats$freq = (sumstats$freq_cases + sumstats$freq_controls)/2
   } else {
     sumstats$freq = NA
   } 
