@@ -171,7 +171,7 @@ range <- sapply(multi_auto, function(auto) diff(range(auto$corr_est)))
 keep <- (range > (0.95 * quantile(range, 0.95)))
 
 # Making sure some chains were kept
-assert("No chains passed QC", sum(keep != 0))
+assert("No chains passed QC", sum(keep) != 0)
 
 cat(sum(keep), "chains passed QC \n")
 
