@@ -11,6 +11,7 @@
 #'    - Make general for continuous traits as well
 #'    - Move n_eff check to parser
 #'    - Add pred in ipsych for best lassosum model
+#'    - Add check for best model between auto and lassosum
 
 suppressPackageStartupMessages({
   library(bigsnpr)
@@ -275,6 +276,16 @@ params$auto_score <- apply(beta_lassosum, 2, function(beta) {
   crossprod(beta, beta_hat_shrunk) / sqrt(bRb)
 })
 
+# Choosing best lassosum model
+
+best_lassosum <- params %>%
+  mutate(id = row_number()) %>%
+  arrange(desc(auto_score)) %>%
+  slice(1) %>%
+  pull(id) %>% 
+  beta_lassosum[, .]
+  
+  
 # Predicting in iPSYCH ------------------------------------------------------------------------------------------------------
 
 # Reading in PCs and info for covariates
