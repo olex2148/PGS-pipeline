@@ -292,13 +292,13 @@ ipsych_sumstats_index <- snp_match(
 # Compute scores for all individuals in iPSYCH
 pred_auto <- big_prodVec(G,
                          beta_auto, # Model
-                         ind.col = ipsych_sumstats_overlap[["_NUM_ID_"]], # Indices in G of snps used in auto
+                         ind.col = ipsych_sumstats_index[["_NUM_ID_"]], # Indices in G of snps used in auto
                          ncores = nb_cores())
 
 # cbind with family and sample ID and save
 scores <- as.data.frame(cbind(covariates_df$family.ID, covariates_df$sample.ID, as.numeric(pred_auto)))
 colnames(scores) <- c("family.ID", "sample.ID", "ldpred2_pgs")
-saveRDS(scores, scores_out)
+saveRDS(scores, paste0(base_path, "_scores.rds"))
 
 cat("Finished computing scores. Models, auto model paramters, følgefil, and auto scores were saved in 4 distinct files in", base_path, "/")
 
