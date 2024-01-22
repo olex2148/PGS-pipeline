@@ -183,16 +183,17 @@ auto <- multi_auto[keep][[1]]
 
 q <- plot_grid(
   qplot(y = auto$path_p_est) + 
-    theme_bigstatsr() +
+    theme_bigstatsr() + 
     geom_hline(yintercept = auto$p_est, col = "blue") +
-    scale_y_log10() + 
-    labs(y = "p") + 
-    qplot(y = auto$path_h2_est) +
-    theme_bigstatsr() +
+    scale_y_log10() +
+    labs(y = "p"),
+  qplot(y = auto$path_h2_est) + 
+    theme_bigstatsr() + 
     geom_hline(yintercept = auto$h2_est, col = "blue") +
     labs(y = "h2"),
   ncol = 1, align = "hv"
 )
+                             
 ggsave(paste0(base_path, "_1st_kept_chain.jpeg"), q)
 
 # Saving parameters ------------------------------------------------------------------------------------------------
