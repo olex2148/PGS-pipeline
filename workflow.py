@@ -83,7 +83,8 @@ def compute_pgs(inputfile):
 
 	Rscript code/pgs_model.R {inputfile} {base_path}
 	
-'''
+	'''
+	
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
 ### Defining targets
