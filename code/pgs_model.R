@@ -300,7 +300,7 @@ scores <- as.data.frame(cbind(covariates_df$family.ID, covariates_df$sample.ID, 
 colnames(scores) <- c("family.ID", "sample.ID", "ldpred2_pgs")
 saveRDS(scores, paste0(base_path, "_scores.rds"))
 
-cat("Finished computing scores. Models, auto model paramters, følgefil, and auto scores were saved in 4 distinct files in", base_path, "/")
+cat("Finished computing scores. Models, auto model parameters, følgefil, and auto scores were saved in 4 distinct files in", base_path, "/")
 
   
 
