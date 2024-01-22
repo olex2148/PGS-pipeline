@@ -206,7 +206,7 @@ quantile(all_p, c(0.5, 0.025, 0.975))
 
 # MLE
 all_alpha <- sapply(multi_auto[keep], function(auto) tail(auto$path_alpha_est, 500))
-quantile(all_alpha, c(0.5, 0.025, 0.975))
+quantile(all_alpha, c(0.5, 0.025, 0.975), na.rm = TRUE)
 
 bsamp <- lapply(multi_auto[keep], function(auto) auto$sample_beta)
 all_r2 <- do.call("cbind", lapply(seq_along(bsamp), function(ic) {
