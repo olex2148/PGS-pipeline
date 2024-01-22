@@ -6,7 +6,7 @@ A function to split path strings into path, basename and suffix for easy manipul
 
 """
 
-import os, re, glob
+import os, re
 
 def modpath(p, parent=None, base=None, suffix=None):
 	'''
