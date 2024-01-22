@@ -89,8 +89,8 @@ def compute_pgs(inputfile):
 ### Defining targets
 
 # Input
-folder_path = input("Folder containing summary statistics: ")
-sumstats = glob.glob(folder_path)
+sumstats_path = input("Path to summary statistics: ")
+sumstats = glob.glob(sumstats_path)
 
 # Submitting jobs for every sumstat file in data folder (parsing and computing PGSs)
 for file in sumstats:
