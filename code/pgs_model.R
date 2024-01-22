@@ -224,7 +224,7 @@ all_r2 <- do.call("cbind", lapply(seq_along(bsamp), function(ic) {
 quantile(all_r2, c(0.5, 0.025, 0.975))
 
 saveRDS(list(r2 = all_r2, h2 = all_h2, alpha = all_alpha, p = all_p),
-        paste0(base_path, "auto_parameters.rds"))
+        paste0(base_path, "_auto_parameters.rds"))
 
 # Saving følgefil ---------------------------------------------------------------------------------------------------------
 # Getting mean h2 and p from chains and saving følgefil
