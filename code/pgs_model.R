@@ -10,6 +10,7 @@
 #' @Todo
 #'    - Make general for continuous traits as well
 #'    - Move n_eff check to parser
+#'    - Add pred in ipsych for best lassosum model
 
 suppressPackageStartupMessages({
   library(bigsnpr)
@@ -149,7 +150,7 @@ for (chr in 1:22) {
 }
 cat("\n")
 
-# LDpred2-auto ------------------------------------------------------------------------------------------------------
+# LDpred2-auto & lassosum --------------------------------------------------------------------------------------------
 coef_shrink <- 0.8
 
 cat("Running LDpred2-auto with shrinkage coefficient", coef_shrink, "\n")
@@ -160,9 +161,9 @@ multi_auto <- snp_ldpred2_auto(
   report_step = 20, ncores = nb_cores(), allow_jump_sign = FALSE, shrink_corr = coef_shrink)
 
 cat("Running lassosum \n")
-lasso <- snp_lassosum2(corr, df_beta, ncores = nb_cores())
-
-saveRDS(list(ldsc = ldsc, ldpred2 = multi_auto, lassosum = lasso),
+beta_lassosum <- snp_lassosum2(corr, df_beta, ncores = nb_cores())
+                    
+saveRDS(list(ldsc = ldsc, ldpred2 = multi_auto, lassosum = beta_lassosum),
         paste0(base_path, "_raw_models.rds"))
 
 # QC on chains from auto --------------------------------------------------------------------------------------------
@@ -196,7 +197,7 @@ q <- plot_grid(
                              
 ggsave(paste0(base_path, "_1st_kept_chain.jpeg"), q)
 
-# Saving parameters ------------------------------------------------------------------------------------------------
+# Saving auto parameters -------------------------------------------------------------------------------------------
 
 all_h2 <- sapply(multi_auto[keep], function(auto) tail(auto$path_h2_est, 500))
 quantile(all_h2, c(0.5, 0.025, 0.975))
@@ -224,6 +225,7 @@ quantile(all_r2, c(0.5, 0.025, 0.975))
 saveRDS(list(r2 = all_r2, h2 = all_h2, alpha = all_alpha, p = all_p),
         paste0(base_path, "auto_parameters.rds"))
 
+# Saving følgefil ---------------------------------------------------------------------------------------------------------
 # Getting mean h2 and p from chains and saving følgefil
 h2_mean <- mean(all_h2)
 h2_se <- sd(all_h2) / sqrt(sum(keep)) # sd / sqrt(n)
@@ -258,6 +260,20 @@ foelgefil <- data.frame(
 write.xlsx(foelgefil, 
            file = paste0("results/følgefiler/", base_name, "_følgefil.xlsx"), 
            rownames = FALSE)
+
+# Pseudo-validation of lassosum -------------------------------------------------------------------------------------------
+scale <- with(df_beta, sqrt(n_eff * beta_se^2 + beta^2))
+beta_hat <- df_beta$beta / scale
+
+fdr <- fdrtool::fdrtool(beta_hat, statistic = "correlation", plot = FALSE)
+beta_hat_shrunk <- round(beta_hat * (1 - fdr$lfdr), 16)
+
+params$auto_score <- apply(beta_lassosum, 2, function(beta) {
+  cat(".")
+  beta <- beta / scale
+  bRb <- crossprod(beta, bigsparser::sp_prodVec(corr, beta))
+  crossprod(beta, beta_hat_shrunk) / sqrt(bRb)
+})
 
 # Predicting in iPSYCH ------------------------------------------------------------------------------------------------------
 
