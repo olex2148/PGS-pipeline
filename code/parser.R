@@ -8,6 +8,7 @@
 #' @Todo
 #'   - Update dict to contain names from MungeSumstats too
 #'   - Check if continuous
+#'   - Add snp_match if only rs number is in sumstats - no chr and pos
 
 suppressPackageStartupMessages({
   library(dplyr)
