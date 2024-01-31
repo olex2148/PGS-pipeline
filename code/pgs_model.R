@@ -9,7 +9,6 @@
 #' 
 #' @Todo
 #'    - Make general for continuous traits as well
-#'    - Move n_eff check to parser
 #'    - Add pred in ipsych for best lassosum model
 #'    - Add check for best model between auto and lassosum
 
@@ -28,7 +27,7 @@ parsed_sumstats <- args[1]
 base_path <- args[2]
 base_name <- sapply(strsplit(base_path, split='/', fixed=TRUE), function(x) (x[3])) # Removing the path in front of base name
 
-source("code/aux_scripts/input_paths.R")
+source("code/aux/input_paths.R")
 set.seed(72)
 
 # Loading data -------------------------------------------------------------------------------------------------
@@ -172,6 +171,7 @@ saveRDS(list(ldsc = ldsc, ldpred2 = multi_auto, lassosum = beta_lassosum),
 range <- sapply(multi_auto, function(auto) diff(range(auto$corr_est)))
 keep <- (range > (0.95 * quantile(range, 0.95)))
 
+# TODO: Use lassosum instead if 0 chains pass QC
 # Making sure some chains were kept
 assert("No chains passed QC", sum(keep) != 0)
 
@@ -206,7 +206,6 @@ quantile(all_h2, c(0.5, 0.025, 0.975))
 all_p <- sapply(multi_auto[keep], function(auto) tail(auto$path_p_est, 500))
 quantile(all_p, c(0.5, 0.025, 0.975))
 
-# MLE
 all_alpha <- sapply(multi_auto[keep], function(auto) tail(auto$path_alpha_est, 500))
 quantile(all_alpha, c(0.5, 0.025, 0.975), na.rm = TRUE)
 
@@ -263,6 +262,7 @@ write.xlsx(foelgefil,
            rownames = FALSE)
 
 # Pseudo-validation of lassosum -------------------------------------------------------------------------------------------
+params <- attr(beta_lassosum, "grid_param")
 scale <- with(df_beta, sqrt(n_eff * beta_se^2 + beta^2))
 beta_hat <- df_beta$beta / scale
 
@@ -322,12 +322,24 @@ pred_auto <- big_prodVec(G,
                          ind.col = ipsych_sumstats_index[["_NUM_ID_"]], # Indices in G of snps used in auto
                          ncores = nb_cores())
 
+pred_lassosum <- big_prodVec(G,
+                             best_lassosum,
+                             ind.col = ipsych_sumstats_index[["_NUM_ID_"]], # Indices in G of snps used in auto
+                             ncores = nb_cores())
+
+# TODO: Add scaling?
+# auto_scaled <- (pred_auto - mean(pred_auto)) / sd(pred_auto)
+# lassosum_scaled <- (pred_lassosum - mean(pred_lassosum)) / sd(pred_lassosum)
+  
 # cbind with family and sample ID and save
-scores <- as.data.frame(cbind(covariates_df$family.ID, covariates_df$sample.ID, as.numeric(pred_auto)))
-colnames(scores) <- c("family.ID", "sample.ID", "ldpred2_pgs")
+scores <- as.data.frame(cbind(covariates_df$family.ID, 
+                              covariates_df$sample.ID, 
+                              as.numeric(pred_auto),
+                              as.numeric(pred_lassosum)))
+colnames(scores) <- c("family.ID", "sample.ID", "ldpred2_pgs", "lassosum_pgs")
 saveRDS(scores, paste0(base_path, "_scores.rds"))
 
-cat("Finished computing scores. Models, auto model parameters, følgefil, and auto scores were saved in 4 distinct files in", base_path, "/")
+cat("Finished computing scores. Models, auto model parameters, følgefil, and auto + lassosum scores were saved in 4 distinct files in", base_path, "/")
 
   
 
