@@ -20,7 +20,7 @@ Todo:
 from gwf import Workflow, AnonymousTarget
 import glob
 from datetime import date
-from code.modpath import modpath
+from code.aux.modpath import modpath
 
 gwf = Workflow()
 
@@ -65,7 +65,7 @@ def compute_pgs(inputfile):
 
 	model_out = f'{base_path}_raw_models.rds'                               # Models, parameters, and scores are put in a folder specific to the sumstats
 	scores_out = f'{base_path}_scores.rds'
-	parameters_out = f'{base_path}_auto_paramters.rds'
+	parameters_out = f'{base_path}_auto_parameters.rds'
 	foelgefil = f'results/følgefiler/{today}/{base}_følgefil.xlsx'          # Følgefil is put in a separate folder specific to the batch run (date in folder name)
 
 	inputs = [inputfile]
@@ -90,8 +90,7 @@ def compute_pgs(inputfile):
 ### Defining targets
 
 # Input
-sumstats_path = input("Path to summary statistics: ")
-sumstats = glob.glob(sumstats_path)
+sumstats = glob.glob("data/ipsych_test/*")
 
 # Submitting jobs for every sumstat file in data folder (parsing and computing PGSs)
 for file in sumstats:
