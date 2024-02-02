@@ -14,6 +14,7 @@ suppressPackageStartupMessages({
   library(dplyr)
   library(Dict)
   library(data.table)
+  library(MungeSumstats)
 })
 
 # Command line arguments for this script

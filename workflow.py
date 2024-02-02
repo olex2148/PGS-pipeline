@@ -25,18 +25,20 @@ from code.aux.modpath import modpath
 gwf = Workflow()
 
 ### Defining gwf templates
-def parse_sumstats(inputfile):
+def munge_sumstats(inputfile):
 	'''
 	Template for running the r script "prepare_and_parse_sumstats.R" which parses GWAS summary statistics
 	'''
 
 	# Using modpath() to create name of output file from inputfile - keeps basename,
 	# but gets another path and another suffix
-	outputfile = modpath(inputfile, parent=('steps/parsed_sumstats'), suffix=('_parsed.rds'))
+	munged_sumstats = modpath(inputfile, parent=('steps/munged_sumstats'), suffix=('_munged.rds'))
+	
+	base_name = modpath(inputfile, parent=(''), suffix=(''))      # Getting the base name from the inputfile 
 
 	# Defining inputs, outputs and ressources
 	inputs = [inputfile]
-	outputs = [outputfile]
+	outputs = [parsed_sumstats]
 	options = {
 		'memory': '10g',
 		'walltime': '00:30:00',
@@ -47,8 +49,10 @@ def parse_sumstats(inputfile):
 	spec = f'''
 	
 	cd ~/NCRR-PRS/faststorage/osh/PGS/pgs_workflow/
+	
+	mkdir -p results/{base_name}
 
-	Rscript code/parser.R {inputfile} {outputfile}
+	Rscript code/parser.R {inputfile} {base_name}
 	
 	'''
 
@@ -66,10 +70,10 @@ def compute_pgs(inputfile):
 	model_out = f'{base_path}_raw_models.rds'                               # Models, parameters, and scores are put in a folder specific to the sumstats
 	scores_out = f'{base_path}_scores.rds'
 	parameters_out = f'{base_path}_auto_parameters.rds'
-	foelgefil = f'results/følgefiler/{today}/{base}_følgefil.xlsx'          # Følgefil is put in a separate folder specific to the batch run (date in folder name)
+	# foelgefil = f'results/foelgefiler/{today}/{base}_foelgefil.xlsx'          # Foelgefil is put in a separate folder specific to the batch run (date in folder name)
 
 	inputs = [inputfile]
-	outputs = [model_out, scores_out, parameters_out, foelgefil]
+	outputs = [model_out, scores_out, parameters_out]
 	options = {
 		'memory': '60g',
 		'walltime': '12:00:00',
@@ -78,8 +82,7 @@ def compute_pgs(inputfile):
 
 	spec = f'''
 
-	mkdir -p results/{base}
-	mkdir -p results/følgefiler/{today}
+	mkdir -p results/foelgefiler/{today}
 
 	Rscript code/pgs_model.R {inputfile} {base_path}
 	
@@ -98,7 +101,7 @@ for file in sumstats:
 
 	a = gwf.target_from_template(
 				name=f'parse_{base_name}',
-				template=parse_sumstats(
+				template=munge_sumstats(
 						inputfile=file
 				)
 	)

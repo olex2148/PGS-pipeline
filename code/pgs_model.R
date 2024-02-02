@@ -56,66 +56,6 @@ info_snp <- snp_match(
   info_ipsych_external[, c("pos","chr","a0","a1","beta","beta_se","freq","p","n_eff", "info")], 
   info)                                                                                           # Hapmap overlap with remaining
 
-# QC -----------------------------------------------------------------------------------------------------------
-
-# First checking that the effective population size is in the parsed sumstats
-assert("No effective population size in parsed sumstats",
-       !all(is.na(info_snp$n_eff)))
-
-# Filtering on beta_se and n_eff which should be present in all sumstats
-info_snp2 <- info_snp %>% 
-  filter(beta_se > 0 & n_eff > (0.7 * max(n_eff)))
-
-# Other QC steps that cannot be performed in all sumstats (if they don't contain freq and/or info)
-is_bad <- NA
-sd_af <- NA
-
-if( !all(is.na(info_snp2$freq)) ){         # If freq exists
-  
-  sd_af <- with(info_snp2, sqrt(2 * freq * (1 - freq)))
-  sd_ss <- with(info_snp2, 2 / sqrt(n_eff * beta_se^2 + beta^2))
-  sd_ss2 <- sd_ss / quantile(sd_ss, 0.999) * sqrt(0.5) 
-  
-  is_bad <- 
-    sd_ss2 < (0.5 * sd_af) |
-    sd_ss2 > (sd_af + 0.1) |
-    sd_ss2 < 0.05 |
-    sd_af < 0.05
-  
-} else {
-  cat("No allele frequencies available in summary statistics. QC step not performed. \n")
-}
-
-if( !all(is.na(info_snp2$info)) ){       # If info exists
-  is_bad <- is_bad | 
-    info_snp2$info < 0.7
-} else {
-  cat("No INFO scores available in summary statistics. QC step not performed. \n")
-}
-
-cat("Number of variants to be filtered out:", sum(is_bad) + (nrow(info_snp) - nrow(info_snp2)), "\n")
-
-if( all(is.na(is_bad)) ){               # if neither info nor freq exist
-  df_beta <- info_snp2
-} else {
-  df_beta <- info_snp2[!is_bad, ]       # If one of them does
-}
-
-# Saving QC in plot if possible
-if( length(sd_af) > 1 ){
-  
-  p <- ggplot(slice_sample(data.frame(sd_af, sd_ss2, is_bad), n = 50e4)) +
-    geom_point(aes(sd_af, sd_ss2, color = is_bad), alpha = 0.5) +
-    theme_bigstatsr(0.9) + 
-    scale_color_viridis_d(direction = -1) +
-    geom_abline(linetype = 2, color = "red", linewidth = 1.5) +
-    labs(x = "Standard deviations in the reference set",
-         y = "Standard deviations derived from the summary statistics",
-         color = "To remove?")
-  
-  ggsave(paste0(base_path, "_QC.jpeg"), p)
-}
-
 # Running LDSC -------------------------------------------------------------------------------------------------------
 cat("Running LDSC \n")
 ldsc <- with(df_beta, snp_ldsc(ld, ld_size = length(ld),
