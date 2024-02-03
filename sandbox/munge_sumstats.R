@@ -25,6 +25,7 @@ suppressPackageStartupMessages({
   library(MungeSumstats)
   library(bigsnpr)
   library(testit)
+  library(ggplot2)
 })
 
 # Command line arguments for this script
@@ -99,7 +100,7 @@ parsed_sumstats <- reformatted %>%
 # Allele frequency -----------------------------------------------
 if("FRQ" %in% colnames(parsed_sumstats)){         # If freq exists
   
-  sd_af <- with(parsed_sumstats, sqrt(2 * FREQ * (1 - FREQ)))
+  sd_af <- with(parsed_sumstats, sqrt(2 * FRQ * (1 - FRQ)))
   sd_ss <- with(parsed_sumstats, 2 / sqrt(N_EFF * BETA_SE^2 + BETA^2))
   sd_ss2 <- sd_ss / quantile(sd_ss, 0.999) * sqrt(0.5) 
   
@@ -127,7 +128,7 @@ if("FRQ" %in% colnames(parsed_sumstats)){         # If freq exists
 }
 
 
-# Finding Hapmap and iPSYCH overlap with sumstats --------------------------------------------------------------
+# Finding Hapmap and iPSYCH overlap with sumstats ----------------------------------------------------------------------------
 
 # Reading in HapMap3+ 
 info <- readRDS(runonce::download_file(
@@ -135,7 +136,7 @@ info <- readRDS(runonce::download_file(
   dir = hapmap_path, fname = "map_hm3_plus.rds"))
 
 # Making colnames lower case for snp_match
-colnames(parsed_sumstats) <- tolower(colnames(parsed_sumstats)) # 
+colnames(parsed_sumstats) <- tolower(colnames(parsed_sumstats)) 
 
 # Finding sumstats/iPSYCH overlap
 df_beta <- snp_match(parsed_sumstats, dosage$map)                                                                                      
