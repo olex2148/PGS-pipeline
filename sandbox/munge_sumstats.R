@@ -33,6 +33,8 @@ sumstats = read_sumstats(args[1])
 base_name = args[2]
 output = paste0("steps/munged_sumstats/", base_name, "_munged.rds")
 
+source("code/aux/input_paths.R")
+
 # sumstats = read_sumstats("data/daner_bip_pgc3_nm_noukbiobank") # For testing
 head(sumstats)
 
@@ -47,8 +49,9 @@ reformatted <- format_sumstats(path=sumstats,                                   
                                impute_beta = TRUE, impute_se = TRUE,                     # Convert OR to beta and se to beta_se
                                INFO_filter = 0.7,                                        # Filtering on INFO score - could be more strict (default 0.9)
                                nThread = nb_cores(),
+                               mapping_file = sumstatsColHeaders,                        # Local mapping file
                                return_data = TRUE, return_format = "data.table") %>% 
-          rename(POS = BP, A0 = A1, A1 = A2) %>%                                         # Renaming to fit LDpred2 format
+          rename(POS = BP, A0 = A1, A1 = A2, BETA_SE = SE) %>%                           # Renaming to fit LDpred2 format
           mutate(CHR = ifelse(CHR == "X", 23, ifelse(CHR == "Y", 24, as.numeric(CHR))))  # Converting X and Y chr to 23 and 24 
 
 # Some manual checks -------------------------------------------------------------------------------------------------------
@@ -133,6 +136,10 @@ if("FRQ" %in% colnames(parsed_sumstats)){         # If freq exists
 info <- readRDS(runonce::download_file(
   "https://figshare.com/ndownloader/files/37802721",
   dir = hapmap_path, fname = "map_hm3_plus.rds"))
+
+# Reading in iPSYCH data
+dosage <- snp_attach(dosage_path) %>% 
+  renmame("chr" = "CHR", "pos" = "POS", "a0" = "a1", "a1" = "a2")
 
 # Making colnames lower case for snp_match
 colnames(parsed_sumstats) <- tolower(colnames(parsed_sumstats)) 
