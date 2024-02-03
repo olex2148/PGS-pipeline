@@ -23,7 +23,7 @@ suppressPackageStartupMessages({
 
 # Command line arguments for this script
 args = commandArgs(trailingOnly = TRUE)
-parsed_sumstats <- args[1]
+munged_sumstats <- args[1]
 base_path <- args[2]
 base_name <- sapply(strsplit(base_path, split='/', fixed=TRUE), function(x) (x[3])) # Removing the path in front of base name
 
@@ -31,18 +31,21 @@ source("code/aux/input_paths.R")
 set.seed(72)
 
 # Loading data -------------------------------------------------------------------------------------------------
-
-# Reading in parsed sumstats
-sumstats = readRDS(parsed_sumstats)
-# sumstats = readRDS("steps/parsed_sumstats/test_adhd.rds") # Example
-
-# Running LDSC -------------------------------------------------------------------------------------------------------
 info <- readRDS(runonce::download_file(
   "https://figshare.com/ndownloader/files/37802721",
   dir = hapmap_path, fname = "map_hm3_plus.rds"))
 
+# Reading in parsed sumstats
+df_beta = readRDS(munged_sumstats) %>% 
+  left_join(info[, c("chr", "pos", "ld")], by = c("chr", "pos"))
+# df_beta = readRDS("steps/munged_sumstats/test_adhd.rds") %>%
+#   left_join(info[, c("chr", "pos", "ld")], by = c("chr", "pos"))
+
+# Running LDSC -------------------------------------------------------------------------------------------------------
 cat("Running LDSC \n")
-ldsc <- with(df_beta, snp_ldsc(ld, ld_size = nrow(info),
+
+ld_size <- nrow(info)
+ldsc <- with(df_beta, snp_ldsc(ld, ld_size = ld_size,
                                chi2 = (beta / beta_se)^2, 
                                sample_size = n_eff,
                                ncores = nb_cores()))
@@ -65,7 +68,7 @@ repeat {
     report_step = 20, ncores = nb_cores(), allow_jump_sign = FALSE, shrink_corr = coef_shrink)
   
   range <- sapply(multi_auto, function(auto) diff(range(auto$corr_est)))
-  keep <- (range > (0.95 * quantile(range, 0.95)))
+  keep <- which(range > (0.95 * quantile(range, 0.95, na.rm = TRUE)))
   
   perc_kept <- sum(keep)/50
   
