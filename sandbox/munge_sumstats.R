@@ -6,7 +6,7 @@
 #' @description This script takes two arguments: An input file of sumstats as well as an output name 
 #' 
 #' @Todo
-#'   
+#'   - Prioritize Neff_half or 4/(1/cases + 1/controls)?
 
 
 if (!require("BiocManager", quietly = TRUE))
@@ -25,10 +25,6 @@ suppressPackageStartupMessages({
   library(MungeSumstats)
   library(bigsnpr)
   library(testit)
-#   library(SNPlocs.Hsapiens.dbSNP144.GRCh37)
-#   library(SNPlocs.Hsapiens.dbSNP144.GRCh38)
-#   library(BSgenome.Hsapiens.1000genomes.hs37d5)
-#   library(BSgenome.Hsapiens.NCBI.GRCh38)
 })
 
 # Command line arguments for this script
@@ -37,25 +33,23 @@ sumstats = read_sumstats(args[1])
 base_name = args[2]
 output = paste0("steps/munged_sumstats/", base_name, "_munged.rds")
 
-# Making sure there are at least 500K variants in sumstats
-assert("Less than 500K variants in sumstats", nrow(sumstats) > 500000)
-
-sumstats = read_sumstats("data/test/daner_bip_pgc3_nm_noukbiobank") # For testing
+# sumstats = read_sumstats("data/daner_bip_pgc3_nm_noukbiobank") # For testing
 head(sumstats)
 
 # Inferring ref genome
 sumstats_list <- list(ss1 = sumstats) # Because "get_genome_build" doesn't exist
-ref_genome <- get_genome_builds(sumstats_list = sumstats_list, dbSNP = 144)$ss1
+ref_genome <- get_genome_builds(sumstats_list = sumstats_list, dbSNP = 144)$ss1     # ~2 mins
 
 # Formatting sumstats using MungeSumstats ---------------------------------------------------------------------------------
-reformatted <- format_sumstats(path=sumstats,
-                               ref_genome=ref_genome, dbSNP = 144,           # Detected ref genome
-                               convert_ref_genome = "GRCh37",                # Convert to HapMap3+ build if not already GRCh37
-                               impute_beta = TRUE, impute_se = TRUE,         # Convert OR to beta and se to beta_se
-                               INFO_filter = 0.7,                            # Filtering on INFO score - could be more strict (default 0.9)
+reformatted <- format_sumstats(path=sumstats,                                       # ~10 mins
+                               ref_genome=ref_genome, dbSNP = 144,                       # Detected ref genome
+                               convert_ref_genome = "GRCh37",                            # Convert to HapMap3+ build if not already GRCh37
+                               impute_beta = TRUE, impute_se = TRUE,                     # Convert OR to beta and se to beta_se
+                               INFO_filter = 0.7,                                        # Filtering on INFO score - could be more strict (default 0.9)
                                nThread = nb_cores(),
                                return_data = TRUE, return_format = "data.table") %>% 
-              rename(POS = BP, A0 = A1, A1 = A2)                             # Renaming to fit LDpred2 format
+          rename(POS = BP, A0 = A1, A1 = A2) %>%                                         # Renaming to fit LDpred2 format
+          mutate(CHR = ifelse(CHR == "X", 23, ifelse(CHR == "Y", 24, as.numeric(CHR))))  # Converting X and Y chr to 23 and 24 
 
 # Some manual checks -------------------------------------------------------------------------------------------------------
 
@@ -133,7 +127,27 @@ if("FRQ" %in% colnames(parsed_sumstats)){         # If freq exists
 }
 
 
-assert("More than 50% of variants were removed after QC", nrow(parsed_sumstats) > nrow(sumstats)/2)
+# Finding Hapmap and iPSYCH overlap with sumstats --------------------------------------------------------------
+
+# Reading in HapMap3+ 
+info <- readRDS(runonce::download_file(
+  "https://figshare.com/ndownloader/files/37802721",
+  dir = hapmap_path, fname = "map_hm3_plus.rds"))
+
+# Making colnames lower case for snp_match
+colnames(parsed_sumstats) <- tolower(colnames(parsed_sumstats)) # 
+
+# Finding sumstats/iPSYCH overlap
+df_beta <- snp_match(parsed_sumstats, dosage$map)                                                                                      
+
+# Finding HapMap3+ overlaps
+in_test <- vctrs::vec_in(df_beta[, c("chr", "pos")], info[, c("chr", "pos")])
+df_beta <- df_beta[in_test, ]                                                                                      
+
+# Making sure there are at least 500K variants in sumstats
+assert("Less than 500K variants remaining in summary statistics following QC and Hapmap3+/iPSYCH overlap.", 
+       nrow(parsed_sumstats) > 500000)
+cat(nrow(parsed_sumstats), "variants remaining in munged sumstats.")
 
 # Saving the parsed sumstats in the outputfile ------------------------------------------------------------------------------
 
