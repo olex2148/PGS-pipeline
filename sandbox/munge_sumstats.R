@@ -20,7 +20,6 @@ BiocManager::install("SNPlocs.Hsapiens.dbSNP144.GRCh37", "BSgenome.Hsapiens.1000
 
 suppressPackageStartupMessages({
   library(dplyr)
-  library(Dict)
   library(data.table)
   library(MungeSumstats)
   library(bigsnpr)
