@@ -38,6 +38,7 @@ info <- readRDS(runonce::download_file(
 # Reading in parsed sumstats
 df_beta = readRDS(munged_sumstats) %>% 
   left_join(info[, c("chr", "pos", "ld")], by = c("chr", "pos"))
+
 # df_beta = readRDS("steps/munged_sumstats/test_adhd.rds") %>%
 #   left_join(info[, c("chr", "pos", "ld")], by = c("chr", "pos"))
 
@@ -53,7 +54,33 @@ h2_init <- ldsc[["h2"]]
 cat("LDSC-estimated heritability on the observed scale:", h2_init, "\n")
 
 # Reading in LD blocks -----------------------------------------------------------------------------------------------
+corr_dir <- paste0("data/corr/", base_name, ".rds")
 
+corr <- runonce::save_run({
+  for (chr in 1:22) {
+    
+    cat(chr, "..", sep = "")
+    
+    ## indices in df_beta
+    ind.chr <- which(df_beta$chr == chr)
+    
+    ## indices in info
+    ind.chr2 <- which(info$chr == chr)
+    
+    ## match df_beta variants with info
+    ind.chr3 <- which(vctrs::vec_in(info[ind.chr2, c("chr", "pos")],
+                                    df_beta[ind.chr, c("chr", "pos")]))
+    
+    corr_chr <- readRDS(paste0(ld_blocks_path, chr, ".rds"))[ind.chr3, ind.chr3]
+    
+    if (chr == 1) {
+      corr <- as_SFBM(corr_chr, corr_dir, compact = TRUE)
+    } else {
+      corr$add_columns(corr_chr, nrow(corr))
+    }
+  }
+  corr
+}, file = corr_dir)
 
 # LDpred2-auto ----------------------------------------------------------------------------------------------------
 coef_shrink <- 0.9
@@ -70,12 +97,13 @@ repeat {
   range <- sapply(multi_auto, function(auto) diff(range(auto$corr_est)))
   keep <- which(range > (0.95 * quantile(range, 0.95, na.rm = TRUE)))
   
-  perc_kept <- sum(keep)/50
+  perc_kept <- length(keep)/50
+  cat(length(keep), "chains passed QC \n")
   
   if(perc_kept > 0.5) break
   coef_shrink <- coef_shrink - 0.1
+  cat("Rerunning \n")
 }
-cat(sum(keep), "chains passed QC \n")
 
 # Average of kept chains
 beta_auto <- rowMeans(sapply(multi_auto[keep], function(auto) auto$beta_est))
