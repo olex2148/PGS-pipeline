@@ -39,9 +39,8 @@ source("code/aux/input_paths.R")
 head(sumstats)
 
 # Formatting sumstats using MungeSumstats ---------------------------------------------------------------------------------
-# Inferring ref genome
-# list because "get_genome_build" doesn't exist
-ref_genome <- get_genome_builds(sumstats_list = list(ss1 = sumstats), dbSNP = 144)$ss1  # ~2 mins
+# Inferring ref genome  -- list() because "get_genome_build" doesn't exist
+ref_genome <- get_genome_builds(sumstats_list = list(ss1 = sumstats), dbSNP = 144, nThread = nb_cores())$ss1  # ~2 mins
 
 reformatted <- format_sumstats(path=sumstats,                                           # ~10 mins
                                ref_genome=ref_genome, dbSNP = 144,                       # Detected ref genome
@@ -80,8 +79,7 @@ snp_info <- snp_info[in_test, ]
 
 # Odds ratio -------------------------------------------------
 
-# If reported effect size is odds ratio, MungeSumstats 
-# does not convert se, as long as SE exists
+# If reported effect size is odds ratio, MungeSumstats does not convert se, as long as SE exists
 if("or" %in% colnames(snp_info)){
   snp_info$beta_se = snp_info$beta/qnorm((1-snp_info$p) / 2) # beta/z
 }
