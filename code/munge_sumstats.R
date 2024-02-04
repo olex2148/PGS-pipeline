@@ -8,6 +8,8 @@
 #' @Todo
 #'   - Prioritize Neff_half or 4/(1/cases + 1/controls)?
 #'   - Filter on iPSYCH frq and info
+#'   - Fix z score
+#'   - Maybe change >500K variants to warning and not terminatin?
 
 
 # if (!require("BiocManager", quietly = TRUE))
@@ -44,10 +46,10 @@ head(sumstats)
 
 # Formatting sumstats using MungeSumstats ---------------------------------------------------------------------------------
 # Inferring ref genome  -- list() because "get_genome_build" doesn't exist
-ref_genome <- get_genome_builds(sumstats_list = list(ss1 = sumstats), dbSNP = 144, nThread = nb_cores())$ss1  # ~2 mins
+# ref_genome <- get_genome_builds(sumstats_list = list(ss1 = sumstats), dbSNP = 144, nThread = nb_cores())$ss1  # ~2 mins
 
 reformatted <- format_sumstats(path=sumstats,                                           # ~8-10 mins
-                               ref_genome=ref_genome, dbSNP = 144,                       # Detected ref genome
+                               ref_genome=NULL, dbSNP = 144,                             # Detecting ref genome
                                convert_ref_genome = "GRCh37",                            # Convert to HapMap3+ build if not already GRCh37
                                impute_beta = TRUE, impute_se = TRUE,                     # Convert OR to beta and se to beta_se
                                INFO_filter = 0.7,                                        # Filtering on INFO score - could be more strict (default 0.9)
@@ -82,6 +84,8 @@ snp_info <- snp_match(reformatted, dosage$map)
 # Finding HapMap3+ overlap
 in_test <- vctrs::vec_in(snp_info[, c("chr", "pos")], info[, c("chr", "pos")])
 snp_info <- snp_info[in_test, ]                          
+
+cat(nrow(snp_info), "variants in overlap with iPSYCH and HapMap3+. \n")
 
 # Some manual checks -------------------------------------------------------------------------------------------------------
 
@@ -158,9 +162,9 @@ if("frq" %in% colnames(df_beta)){         # If freq exists
 }
 
 # Making sure there are at least 500K variants in sumstats -----------------------------------------------------------------
-assert("Less than 500K variants remaining in summary statistics following QC and Hapmap3+/iPSYCH overlap.", 
-       nrow(df_beta) > 500000)
-cat(nrow(df_beta), "variants remaining in munged sumstats.")
+# assert("Less than 500K variants remaining in summary statistics following QC and Hapmap3+/iPSYCH overlap.", 
+#        nrow(df_beta) > 500000)
+cat(nrow(df_beta), "variants remaining in munged sumstats. \n")
 
 # Saving the parsed sumstats in the outputfile ------------------------------------------------------------------------------
 

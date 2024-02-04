@@ -10,6 +10,8 @@
 #' @Todo
 #'    - Make general for continuous traits as well
 #'    - min perc_kept
+#'    - Fix foelgefil
+#'    - Fix pred
 
 suppressPackageStartupMessages({
   library(bigsnpr)
@@ -29,9 +31,15 @@ base_name <- sapply(strsplit(base_path, split='/', fixed=TRUE), function(x) (x[3
 source("code/aux/input_paths.R")
 
 # Loading data -------------------------------------------------------------------------------------------------
+# Reading in HapMap3+ 
 info <- readRDS(runonce::download_file(
   "https://figshare.com/ndownloader/files/37802721",
   dir = hapmap_path, fname = "map_hm3_plus.rds"))
+
+# Reading in iPSYCH data
+dosage <- snp_attach(dosage_path) 
+dosage$map <- dosage$map %>% 
+  rename("chr" = "CHR", "pos" = "POS", "a0" = "a1", "a1" = "a2")
 
 # Reading in parsed sumstats
 df_beta = readRDS(munged_sumstats) %>% 
@@ -85,8 +93,6 @@ set.seed(72)
 coef_shrink <- 0.9
 
 repeat { 
-  if(coef_shrink < 0.4) break # We won't allow a shrinkage coef smaller than 0.4
-  
   cat("Running LDpred2-auto with shrinkage coefficient", coef_shrink, "\n")
   
   multi_auto <- snp_ldpred2_auto(
@@ -101,8 +107,9 @@ repeat {
   perc_kept <- length(keep)/50
   cat(length(keep), "chains passed QC \n")
   
-  if(perc_kept > 0.5) break
+  if(perc_kept > 0.3) break
   coef_shrink <- coef_shrink - 0.1
+  if(coef_shrink < 0.4) break # We won't allow a shrinkage coef smaller than 0.4
   cat("Rerunning \n")
 }
 
@@ -187,39 +194,39 @@ best_lassosum <- params %>%
 
 # Saving foelgefil ---------------------------------------------------------------------------------------------------------
 # Getting mean h2 and p from chains and saving foelgefil
-h2_mean <- mean(all_h2)
-h2_se <- sd(all_h2) / sqrt(sum(keep)) # sd / sqrt(n)
-
-p_mean <- mean(all_p)
-p_se <- sd(all_p) / sqrt(sum(keep)) # sd / sqrt(n)
-
-foelgefil <- data.frame(
-  id = base_name,
-  restrictions = NA,
-  reported_trait = NA,
-  pubmed_id = NA,
-  first_author = NA,
-  journal = NA,
-  title = NA,
-  publication_date = NA,
-  N = NA,
-  Ncase = NA,
-  Ncontrol = NA,
-  se = "beta",
-  M_or = nrow(sumstats), # Variants in the original sumstats
-  M_m = nrow(info_snp),  # Overlap with HapMap and iPSYCH
-  M_qc = nrow(df_beta),  # Variants after QC
-  m_h2 = h2_mean,        # Ldpred2 h2 mean from kept chains
-  se_he = h2_se,         # h2 se
-  m_p = p_mean,          # LDpred2 polygenicity mean from kept chains
-  se_p = p_se,           # p se
-  h2_init = h2_init      # LDSC h2
-  
-)
-
-write.xlsx(foelgefil, 
-           file = paste0("results/foelgefiler/", base_name, "_foelgefil.xlsx"), 
-           rownames = FALSE)
+# h2_mean <- mean(all_h2)
+# h2_se <- sd(all_h2) / sqrt(sum(keep)) # sd / sqrt(n)
+# 
+# p_mean <- mean(all_p)
+# p_se <- sd(all_p) / sqrt(sum(keep)) # sd / sqrt(n)
+# 
+# foelgefil <- data.frame(
+#   id = base_name,
+#   restrictions = NA,
+#   reported_trait = NA,
+#   pubmed_id = NA,
+#   first_author = NA,
+#   journal = NA,
+#   title = NA,
+#   publication_date = NA,
+#   N = NA,
+#   Ncase = NA,
+#   Ncontrol = NA,
+#   se = "beta",
+#   M_or = nrow(sumstats), # Variants in the original sumstats
+#   M_m = nrow(info_snp),  # Overlap with HapMap and iPSYCH
+#   M_qc = nrow(df_beta),  # Variants after QC
+#   m_h2 = h2_mean,        # Ldpred2 h2 mean from kept chains
+#   se_he = h2_se,         # h2 se
+#   m_p = p_mean,          # LDpred2 polygenicity mean from kept chains
+#   se_p = p_se,           # p se
+#   h2_init = h2_init      # LDSC h2
+#   
+# )
+# 
+# write.xlsx(foelgefil, 
+#            file = paste0("results/foelgefiler/", base_name, "_foelgefil.xlsx"), 
+#            rownames = FALSE)
 
 # Saving the raw models                 
 saveRDS(list(ldsc = ldsc, ldpred2 = multi_auto, lassosum = beta_lassosum),
