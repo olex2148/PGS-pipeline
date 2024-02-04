@@ -38,7 +38,7 @@ def munge_sumstats(inputfile):
 
 	# Defining inputs, outputs and ressources
 	inputs = [inputfile]
-	outputs = [parsed_sumstats]
+	outputs = [munged_sumstats]
 	options = {
 		'memory': '10g',
 		'walltime': '00:30:00',
@@ -64,7 +64,7 @@ def compute_pgs(inputfile):
 	'''
 	today = date.today()
 
-	base = modpath(inputfile, parent=(''), suffix=('_parsed.rds', ''))      # Getting the base name from the inputfile 
+	base = modpath(inputfile, parent=(''), suffix=('_munged.rds', ''))      # Getting the base name from the inputfile 
 	base_path = f'results/{base}/{base}'                                    # New path with sumstat-specific folder (and filename without suffix)
 
 	model_out = f'{base_path}_raw_models.rds'                               # Models, parameters, and scores are put in a folder specific to the sumstats
