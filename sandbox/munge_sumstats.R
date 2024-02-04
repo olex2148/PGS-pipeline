@@ -31,7 +31,10 @@ suppressPackageStartupMessages({
 args = commandArgs(trailingOnly = TRUE)
 sumstats = read_sumstats(args[1])
 base_name = args[2]
-output = paste0("steps/munged_sumstats/", base_name, "_munged.rds")
+
+# Some names of output
+output = paste0("steps/munged_sumstats/", base_name, "_munged.rds") # Final output of script
+tmp = paste0("steps/tmp/", base_name, ".tsv.gz")                    # File for the result of format_sumstats, which is deleted 
 
 source("code/aux/input_paths.R")
 
@@ -42,16 +45,20 @@ head(sumstats)
 # Inferring ref genome  -- list() because "get_genome_build" doesn't exist
 ref_genome <- get_genome_builds(sumstats_list = list(ss1 = sumstats), dbSNP = 144, nThread = nb_cores())$ss1  # ~2 mins
 
-reformatted <- format_sumstats(path=sumstats,                                           # ~10 mins
+reformatted <- format_sumstats(path=sumstats,                                           # ~8-10 mins
                                ref_genome=ref_genome, dbSNP = 144,                       # Detected ref genome
                                convert_ref_genome = "GRCh37",                            # Convert to HapMap3+ build if not already GRCh37
                                impute_beta = TRUE, impute_se = TRUE,                     # Convert OR to beta and se to beta_se
                                INFO_filter = 0.7,                                        # Filtering on INFO score - could be more strict (default 0.9)
                                nThread = nb_cores(),
                                mapping_file = sumstatsColHeaders,                        # Local mapping file
-                               return_data = TRUE, return_format = "data.table") %>% 
+                               return_data = TRUE, return_format = "data.table",
+                               save_path = tmp, force_new = TRUE) %>%                    
           rename(POS = BP, A0 = A1, A1 = A2, BETA_SE = SE) %>%                           # Renaming to fit LDpred2 format
           mutate(CHR = ifelse(CHR == "X", 23, ifelse(CHR == "Y", 24, as.numeric(CHR))))  # Converting X and Y chr to 23 and 24 
+
+# Deleting the file that has been written to disc
+file.remove(tmp)
 
 # Finding Hapmap and iPSYCH overlap with sumstats ----------------------------------------------------------------------------
 
