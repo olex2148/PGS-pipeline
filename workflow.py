@@ -52,7 +52,7 @@ def munge_sumstats(inputfile):
 	
 	mkdir -p results/{base_name}
 
-	Rscript code/parser.R {inputfile} {base_name}
+	Rscript code/munge_sumstats.R {inputfile} {base_name}
 	
 	'''
 
@@ -107,7 +107,7 @@ for file in sumstats:
 	)
 
 	b =  gwf.target_from_template(
-				name=f'PGS_model_{base_name}',
+				name=f'ldpred2_{base_name}',
 				template=compute_pgs(
 						inputfile=a.outputs[0]
 				)
