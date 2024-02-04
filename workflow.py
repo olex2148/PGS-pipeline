@@ -40,7 +40,7 @@ def munge_sumstats(inputfile):
 	inputs = [inputfile]
 	outputs = [munged_sumstats]
 	options = {
-		'memory': '30g',
+		'memory': '50g',
 		'walltime': '01:00:00',
 		'cores': '23'
 	}
