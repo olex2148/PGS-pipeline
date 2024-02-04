@@ -7,6 +7,7 @@
 #' 
 #' @Todo
 #'   - Prioritize Neff_half or 4/(1/cases + 1/controls)?
+#'   - Filter on iPSYCH frq and info
 
 
 # if (!require("BiocManager", quietly = TRUE))
