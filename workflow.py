@@ -40,9 +40,9 @@ def munge_sumstats(inputfile):
 	inputs = [inputfile]
 	outputs = [munged_sumstats]
 	options = {
-		'memory': '10g',
+		'memory': '30g',
 		'walltime': '00:30:00',
-		'cores': '2'
+		'cores': '23'
 	}
 	
 	# Command to be run in the terminal
