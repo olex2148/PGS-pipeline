@@ -88,7 +88,7 @@ snp_info <- snp_info[in_test, ]
 
 # If reported effect size is odds ratio, MungeSumstats does not convert se, as long as SE exists
 if("or" %in% colnames(snp_info)){
-  snp_info$beta_se = snp_info$beta/qnorm(1-snp_info$p / 2) # beta/z
+  snp_info$beta_se = snp_info$beta/qnorm(1-snp_info$p/2) # beta/z
 }
 
 # Effective population size ----------------------------------
