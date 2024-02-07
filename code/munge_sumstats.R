@@ -99,11 +99,11 @@ if("or" %in% colnames(snp_info)){
 # Effective population size ----------------------------------
 
 if(!"n_eff" %in% colnames(snp_info)){
-  if("n_cas" %in% colnames(snp_info)){
-    snp_info$n_eff = 4/(1/snp_info$n_cas + 1/snp_info$n_con)
+  if("neff_half" %in% colnames(snp_info)){
+    snp_info$n_eff = snp_info$neff_half * 2
   } else {
-      if("neff_half" %in% colnames(snp_info)){
-        snp_info$n_eff = snp_info$neff_half * 2
+    if("n_cas" %in% colnames(snp_info)){
+        snp_info$n_eff = 4/(1/snp_info$n_cas + 1/snp_info$n_con)
       }
   }
 }
@@ -161,9 +161,9 @@ if("frq" %in% colnames(df_beta)){         # If freq exists
   cat("No allele frequencies available in summary statistics. QC step not performed. \n")
 }
 
-# Making sure there are at least 500K variants in sumstats -----------------------------------------------------------------
-# assert("Less than 500K variants remaining in summary statistics following QC and Hapmap3+/iPSYCH overlap.", 
-#        nrow(df_beta) > 500000)
+# Making sure there are at least 60K variants in sumstats -----------------------------------------------------------------
+assert("Less than 60K variants remaining in summary statistics following QC and Hapmap3+/iPSYCH overlap.",
+       nrow(df_beta) > 60000)
 cat(nrow(df_beta), "variants remaining in munged sumstats. \n")
 
 # Saving the parsed sumstats in the outputfile ------------------------------------------------------------------------------
