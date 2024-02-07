@@ -31,13 +31,13 @@ suppressPackageStartupMessages({
 })
 
 # Command line arguments for this script
-args = commandArgs(trailingOnly = TRUE)
-sumstats = read_sumstats(args[1])
-base_name = args[2]
+args <- commandArgs(trailingOnly = TRUE)
+sumstats <- read_sumstats(args[1])
+base_name <- args[2]
 
 # Some names of output
-output = paste0("steps/munged_sumstats/", base_name, "_munged.rds") # Final output of script
-tmp = paste0("steps/tmp/", base_name, ".tsv.gz")                    # File for the result of format_sumstats, which is deleted 
+output <- paste0("steps/munged_sumstats/", base_name, "_munged.rds") # Final output of script
+tmp <- paste0("steps/tmp/", base_name, ".tsv.gz")                    # File for the result of format_sumstats, which is deleted 
 
 source("code/aux/input_paths.R")
 
@@ -45,9 +45,6 @@ source("code/aux/input_paths.R")
 head(sumstats)
 
 # Formatting sumstats using MungeSumstats ---------------------------------------------------------------------------------
-# Inferring ref genome  -- list() because "get_genome_build" doesn't exist
-# ref_genome <- get_genome_builds(sumstats_list = list(ss1 = sumstats), dbSNP = 144, nThread = nb_cores())$ss1  # ~2 mins
-
 reformatted <- format_sumstats(path=sumstats,                                           # ~8-10 mins
                                ref_genome=NULL, dbSNP = 144,                             # Detecting ref genome
                                convert_ref_genome = "GRCh37",                            # Convert to HapMap3+ build if not already GRCh37
@@ -180,4 +177,4 @@ cat(nrow(df_beta), "variants remaining in munged sumstats. \n")
 head(df_beta)
 saveRDS(df_beta, output)
 
-# saveRDS(df_beta, "steps/munged_sumstats/test_adhd.rds") # for testing
+# saveRDS(df_beta, test_parsed) # for testing
