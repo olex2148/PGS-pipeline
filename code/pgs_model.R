@@ -45,7 +45,7 @@ dosage$map <- dosage$map %>%
 df_beta = readRDS(munged_sumstats) %>% 
   left_join(info[, c("chr", "pos", "ld")], by = c("chr", "pos"))
 
-# df_beta = readRDS("steps/munged_sumstats/test_adhd.rds") %>%
+# df_beta = readRDS(test_parsed) %>%
 #   left_join(info[, c("chr", "pos", "ld")], by = c("chr", "pos"))
 
 # Running LDSC -------------------------------------------------------------------------------------------------------
@@ -244,7 +244,7 @@ covariates_df <- dosage$fam %>%
          # Time diff in years between present date and fdate
          age = lubridate::time_length(
            difftime(
-             as.Date(Sys.Date(), format = "%d/%m/%Y"), 
+             as.Date("01/01/2023", format = "%d/%m/%Y"), 
              as.Date(fdato, format = "%d/%m/%Y")), 
            "years")) %>% 
   select(-c(paternal.ID, maternal.ID, affection, gender))
@@ -275,7 +275,7 @@ scores <- as.data.frame(cbind(covariates_df$family.ID,
 colnames(scores) <- c("family.ID", "sample.ID", "ldpred2_pgs", "lassosum_pgs")
 saveRDS(scores, paste0(base_path, "_scores.rds"))
 
-cat("Finished computing scores. Models, auto model parameters, følgefil, and auto + lassosum scores were saved in 4 distinct files in", base_path, "/")
+cat("\n Finished computing scores. Models, auto model parameters, foelgefil, and auto + lassosum scores were saved in 4 distinct files in", base_path, "/")
 
 
 
