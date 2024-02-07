@@ -181,9 +181,7 @@ params$auto_score <- apply(beta_lassosum, 2, function(beta) {
   crossprod(beta, beta_hat_shrunk) / sqrt(bRb)
 })
 
-
 # Choosing best lassosum model
-
 best_lassosum <- params %>%
   mutate(id = row_number()) %>%
   arrange(desc(auto_score)) %>%
@@ -261,17 +259,13 @@ G <- dosage$genotypes
 # Compute scores for all individuals in iPSYCH
 pred_auto <- big_prodVec(G,
                          beta_auto, # Model
-                         ind.col = ipsych_sumstats_index[["_NUM_ID_"]], # Indices in G of snps used in auto
+                         ind.col = df_beta[["_NUM_ID_"]], # Indices in G of snps used in auto
                          ncores = nb_cores())
 
 pred_lassosum <- big_prodVec(G,
                              best_lassosum,
-                             ind.col = ipsych_sumstats_index[["_NUM_ID_"]], # Indices in G of snps used in auto
+                             ind.col = df_beta[["_NUM_ID_"]], # Indices in G of snps used in auto
                              ncores = nb_cores())
-
-# TODO: Add scaling?
-# auto_scaled <- (pred_auto - mean(pred_auto)) / sd(pred_auto)
-# lassosum_scaled <- (pred_lassosum - mean(pred_lassosum)) / sd(pred_lassosum)
 
 # cbind with family and sample ID and save
 scores <- as.data.frame(cbind(covariates_df$family.ID, 
