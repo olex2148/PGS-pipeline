@@ -258,11 +258,6 @@ cov <- cbind(covariates_df$sex, covariates_df$age, covariates_df$is_2012, pcs)
 
 G <- dosage$genotypes
 
-# Finding indices of variants in G which is used in models
-ipsych_sumstats_index <- snp_match(
-  df_beta[, c("pos","chr","a0","a1","beta","beta_se","freq","p","n_eff", "info")], # Only some of the cols, to avoid duplicate NUM_SS
-  dosage$map)
-
 # Compute scores for all individuals in iPSYCH
 pred_auto <- big_prodVec(G,
                          beta_auto, # Model
