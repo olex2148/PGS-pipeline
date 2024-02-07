@@ -154,7 +154,7 @@ if("frq" %in% colnames(df_beta)){         # If freq exists
 } else {
   cat("No allele frequencies available in summary statistics. QC step not performed. \n")
 }
-cat(length(which(is_bad)), "variants removed in QC.", nrow(df_beta), "remaining. \n")
+cat(nrow(df_beta), "variants remaining following QC. \n")
 
 # Restricting to iPSYCH variants -----------------------------------------------------------------------------------------
 # Reading in iPSYCH data
