@@ -39,6 +39,7 @@ def munge_sumstats(inputfile):
 	# Defining inputs, outputs and ressources
 	inputs = [inputfile]
 	outputs = [munged_sumstats]
+	working_dir = '~/NCRR-PRS/faststorage/osh/PGS/pgs_workflow/'
 	options = {
 		'memory': '50g',
 		'walltime': '01:00:00',
@@ -47,8 +48,6 @@ def munge_sumstats(inputfile):
 	
 	# Command to be run in the terminal
 	spec = f'''
-	
-	cd ~/NCRR-PRS/faststorage/osh/PGS/pgs_workflow/
 	
 	mkdir -p results/{base_name}
 
@@ -74,6 +73,7 @@ def compute_pgs(inputfile):
 
 	inputs = [inputfile]
 	outputs = [model_out, scores_out, parameters_out]
+	working_dir = '~/NCRR-PRS/faststorage/osh/PGS/pgs_workflow/'
 	options = {
 		'memory': '60g',
 		'walltime': '12:00:00',
@@ -92,23 +92,19 @@ def compute_pgs(inputfile):
 
 ### Defining targets
 
+# Naming functions
+def get_munge_name(idx, target):
+  filename = modpath(target.inputs[0], parent='', suffix='')
+  return f'munge_{filename}'
+
+def get_pgs_name(idx, target):
+  filename = modpath(target.inputs[0], parent='', suffix=('_munged.rds', ''))
+  return f'ldpred2_{filename}'
+
 # Input
-sumstats = glob.glob("data/ipsych_test/*")
+sumstats = gwf.glob("data/ipsych_test/*")
 
-# Submitting jobs for every sumstat file in data folder (parsing and computing PGSs)
-for file in sumstats:
-	base_name = modpath(file, parent='', suffix='')
+# Mapping over the inputs
+parse_sumstats = gwf.map(munge_sumstats, sumstats, name=get_munge_name)
+compute_scores = gwf.map(compute_pgs, parse_sumstats.outputs, name=get_pgs_name)
 
-	a = gwf.target_from_template(
-				name=f'parse_{base_name}',
-				template=munge_sumstats(
-						inputfile=file
-				)
-	)
-
-	b =  gwf.target_from_template(
-				name=f'ldpred2_{base_name}',
-				template=compute_pgs(
-						inputfile=a.outputs[0]
-				)
-	)
