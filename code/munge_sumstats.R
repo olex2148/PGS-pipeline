@@ -113,6 +113,12 @@ if(!"n_eff" %in% colnames(snp_info)){
 assert("No effective population size in parsed sumstats",
        "n_eff" %in% colnames(snp_info))
 
+# Z score ----------------------------------------------------
+if(!"beta" %in% colnames(snp_info) & "z" %in% colnames(snp_info)){
+    snp_info$beta = with(snp_info, z / sqrt(2*p*(1-p)(n_eff + z^2)))  
+    snp_info$beta_se = with(snp_info, beta/qnorm(1-p/2)) # beta/z
+}
+
 # Allele frequency ------------------------------------------
 
 # Check if frq columns are on the form frq_a_X and frq_u_X
