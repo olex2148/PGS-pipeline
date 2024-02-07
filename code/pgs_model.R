@@ -104,7 +104,7 @@ repeat {
   perc_kept <- length(keep)/50
   cat(length(keep), "chains passed QC \n")
   
-  if(perc_kept > 0.2) break                       # At least 10 chains should pass QC
+  if(perc_kept >= 0.2) break                       # At least 10 chains should pass QC
   coef_shrink <- coef_shrink - 0.1
   if(coef_shrink < 0.4) break                     # We won't allow a shrinkage coef smaller than 0.4
   cat("Rerunning \n")
@@ -152,7 +152,6 @@ all_r2 <- do.call("cbind", lapply(seq_along(bsamp), function(ic) {
   
   b2Rb1 <- as.matrix(Matrix::crossprod(b2, Rb1))
 }))
-
 quantile(all_r2, c(0.5, 0.025, 0.975))
 
 saveRDS(list(r2 = all_r2, h2 = all_h2, alpha = all_alpha, p = all_p),
