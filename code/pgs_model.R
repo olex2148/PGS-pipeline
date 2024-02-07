@@ -107,9 +107,9 @@ repeat {
   perc_kept <- length(keep)/50
   cat(length(keep), "chains passed QC \n")
   
-  if(perc_kept > 0.3) break
+  if(perc_kept > 0.2) break                       # At least 10 chains should pass QC
   coef_shrink <- coef_shrink - 0.1
-  if(coef_shrink < 0.4) break # We won't allow a shrinkage coef smaller than 0.4
+  if(coef_shrink < 0.4) break                     # We won't allow a shrinkage coef smaller than 0.4
   cat("Rerunning \n")
 }
 
