@@ -63,29 +63,20 @@ reformatted <- format_sumstats(path=sumstats,                                   
 # Deleting the file that has been written to disc
 file.remove(tmp)
 
-# Finding Hapmap and iPSYCH overlap with sumstats ----------------------------------------------------------------------------
+# Finding Hapmap overlap with sumstats -----------------------------------------------------------------------------------
 
 # Reading in HapMap3+ 
 info <- readRDS(runonce::download_file(
   "https://figshare.com/ndownloader/files/37802721",
   dir = hapmap_path, fname = "map_hm3_plus.rds"))
 
-# Reading in iPSYCH data
-dosage <- snp_attach(dosage_path) 
-dosage$map <- dosage$map %>% 
-  rename("chr" = "CHR", "pos" = "POS", "a0" = "a1", "a1" = "a2")
-
 # Making colnames lower case for snp_match
 colnames(reformatted) <- tolower(colnames(reformatted)) 
 
-# Finding sumstats/iPSYCH overlap
-snp_info <- snp_match(reformatted, dosage$map)                                                                                      
+# Finding sumstats/HapMap3+ overlap
+snp_info <- snp_match(reformatted, info)                                                                                      
 
-# Finding HapMap3+ overlap
-in_test <- vctrs::vec_in(snp_info[, c("chr", "pos")], info[, c("chr", "pos")])
-snp_info <- snp_info[in_test, ]                          
-
-cat(nrow(snp_info), "variants in overlap with iPSYCH and HapMap3+. \n")
+cat(nrow(snp_info), "variants in overlap with HapMap3+. \n")
 
 # Some manual checks -------------------------------------------------------------------------------------------------------
 
@@ -166,6 +157,18 @@ if("frq" %in% colnames(df_beta)){         # If freq exists
 } else {
   cat("No allele frequencies available in summary statistics. QC step not performed. \n")
 }
+cat(length(which(is_bad)), "variants removed in QC.", nrow(df_beta), "remaining. \n")
+
+# Restricting to iPSYCH variants -----------------------------------------------------------------------------------------
+# Reading in iPSYCH data
+dosage <- snp_attach(dosage_path) 
+dosage$map <- dosage$map %>% 
+  rename("chr" = "CHR", "pos" = "POS", "a0" = "a1", "a1" = "a2")
+
+# Finding iPSYCH overlap
+in_test <- vctrs::vec_in(df_beta[, c("chr", "pos")], dosage$map[, c("chr", "pos")])
+df_beta <- df_beta[in_test, ]                          
+
 
 # Making sure there are at least 60K variants in sumstats -----------------------------------------------------------------
 assert("Less than 60K variants remaining in summary statistics following QC and Hapmap3+/iPSYCH overlap.",
