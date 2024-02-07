@@ -18,9 +18,9 @@ Todo:
 """
 
 from gwf import Workflow, AnonymousTarget
-import glob
 from datetime import date
 from code.aux.modpath import modpath
+from code.aux.input_paths import work_dir
 
 gwf = Workflow()
 
@@ -39,7 +39,7 @@ def munge_sumstats(inputfile):
 	# Defining inputs, outputs and ressources
 	inputs = [inputfile]
 	outputs = [munged_sumstats]
-	working_dir = '~/NCRR-PRS/faststorage/osh/PGS/pgs_workflow/'
+	working_dir = work_dir
 	options = {
 		'memory': '50g',
 		'walltime': '01:00:00',
@@ -73,7 +73,7 @@ def compute_pgs(inputfile):
 
 	inputs = [inputfile]
 	outputs = [model_out, scores_out, parameters_out]
-	working_dir = '~/NCRR-PRS/faststorage/osh/PGS/pgs_workflow/'
+	working_dir = work_dir
 	options = {
 		'memory': '60g',
 		'walltime': '12:00:00',
