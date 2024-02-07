@@ -68,11 +68,10 @@ corr <- runonce::save_run({
     ind.chr <- which(df_beta$chr == chr)
     
     ## indices in info
-    ind.chr2 <- which(info$chr == chr)
+    ind.chr2 <- df_beta$`_NUM_ID_`[ind.chr]
     
-    ## match df_beta variants with info
-    ind.chr3 <- which(vctrs::vec_in(info[ind.chr2, c("chr", "pos")],
-                                    df_beta[ind.chr, c("chr", "pos")]))
+    ## indices in corr_chr
+    ind.chr3 <- match(ind.chr2, which(info$chr == chr))
     
     corr_chr <- readRDS(paste0(ld_blocks_path, chr, ".rds"))[ind.chr3, ind.chr3]
     
@@ -252,15 +251,18 @@ cov <- cbind(covariates_df$sex, covariates_df$age, covariates_df$is_2012, pcs)
 
 G <- dosage$genotypes
 
+map_pgs <- df_beta[1:4]; map_pgs$beta <- 1
+map_pgs2 <- snp_match(map_pgs, dosage$map)
+
 # Compute scores for all individuals in iPSYCH
 pred_auto <- big_prodVec(G,
                          beta_auto, # Model
-                         ind.col = df_beta[["_NUM_ID_"]], # Indices in G of snps used in auto
+                         ind.col = map_pgs2[["_NUM_ID_"]], # Indices in G of snps used in auto
                          ncores = nb_cores())
 
 pred_lassosum <- big_prodVec(G,
                              best_lassosum,
-                             ind.col = df_beta[["_NUM_ID_"]], # Indices in G of snps used in auto
+                             ind.col = map_pgs2[["_NUM_ID_"]], # Indices in G of snps used in auto
                              ncores = nb_cores())
 
 # cbind with family and sample ID and save
