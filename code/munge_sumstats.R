@@ -29,6 +29,7 @@ suppressPackageStartupMessages({
   library(testit)
   library(ggplot2)
 })
+# sumstats = read_sumstats(test_path) # For testing
 
 # Command line arguments for this script
 args <- commandArgs(trailingOnly = TRUE)
@@ -41,7 +42,6 @@ tmp <- paste0("steps/tmp/", base_name, ".tsv.gz")                    # File for 
 
 source("code/aux/input_paths.R")
 
-# sumstats = read_sumstats(test_path) # For testing
 head(sumstats)
 
 # Formatting sumstats using MungeSumstats ---------------------------------------------------------------------------------

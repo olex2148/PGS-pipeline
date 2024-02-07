@@ -42,8 +42,8 @@ dosage$map <- dosage$map %>%
   rename("chr" = "CHR", "pos" = "POS", "a0" = "a1", "a1" = "a2")
 
 # Reading in parsed sumstats
+# df_beta = readRDS(test_parsed) # For testing
 df_beta = readRDS(munged_sumstats)
-# df_beta = readRDS(test_parsed)
 
 # Running LDSC -------------------------------------------------------------------------------------------------------
 cat("Running LDSC \n")
