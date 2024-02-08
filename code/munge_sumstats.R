@@ -199,5 +199,5 @@ foelgefil <- data.frame(
 )
 
 write.xlsx(foelgefil,
-           file = paste0("results/foelgefiler/", base_name, "_foelgefil.xlsx"),
+           file = paste0("results/foelgefiler/", Sys.Date(), "/", base_name, "_foelgefil.xlsx"),
            rownames = FALSE, overwrite = TRUE)
