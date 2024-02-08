@@ -6,21 +6,20 @@
 #' @description This script takes two arguments: An input file of sumstats as well as an output name 
 #' 
 #' @Todo
-#'   - Prioritize Neff_half or 4/(1/cases + 1/controls)?
-#'   - Filter on iPSYCH frq and info
-#'   - Fix z score
-#'   - Maybe change >500K variants to warning and not terminatin?
-
 
 # if (!require("BiocManager", quietly = TRUE))
 #   install.packages("BiocManager")
 # BiocManager::install(version = "3.18") # Version needed for MungeSumstats
 # BiocManager::install("MungeSumstats")
 # 
-# # Installing ref genomes
-# BiocManager::install("SNPlocs.Hsapiens.dbSNP144.GRCh37", "BSgenome.Hsapiens.1000genomes.hs37d5",
-#                      "SNPlocs.Hsapiens.dbSNP144.GRCh38", "BSgenome.Hsapiens.NCBI.GRCh38")
+# Installing ref genomes
+# options(timeout=2000)
+# BiocManager::install("SNPlocs.Hsapiens.dbSNP155.GRCh38")
+# BiocManager::install("BSgenome.Hsapiens.NCBI.GRCh38")
+# BiocManager::install("SNPlocs.Hsapiens.dbSNP155.GRCh37")
+# BiocManager::install("BSgenome.Hsapiens.1000genomes.hs37d5")
 
+# Libs ----------------------------------------------------------------------------
 suppressPackageStartupMessages({
   library(dplyr)
   library(data.table)
@@ -28,7 +27,11 @@ suppressPackageStartupMessages({
   library(bigsnpr)
   library(testit)
   library(ggplot2)
+  library(openxlsx)
 })
+
+# Input and output -----------------------------------------------------------------
+source("code/aux/input_paths.R")
 # sumstats = read_sumstats(test_path) # For testing
 
 # Command line arguments for this script
@@ -36,63 +39,44 @@ args <- commandArgs(trailingOnly = TRUE)
 sumstats <- read_sumstats(args[1])
 base_name <- args[2]
 
-# Some names of output
 output <- paste0("steps/munged_sumstats/", base_name, "_munged.rds") # Final output of script
-tmp <- paste0("steps/tmp/", base_name, ".tsv.gz")                    # File for the result of format_sumstats, which is deleted 
 
-source("code/aux/input_paths.R")
+# Standardizing header
+sumstats <- standardise_header(sumstats, mapping_file = sumstatsColHeaders, return_list = FALSE)
 
-head(sumstats)
+# Inferring reference genome and performing lift_over if necessary -------------------------------------------------------
+ref_genome <- get_genome_builds(sumstats_list = list(ss1 = sumstats))$ss1
 
-# Formatting sumstats using MungeSumstats ---------------------------------------------------------------------------------
-reformatted <- format_sumstats(path=sumstats,                                           # ~8-10 mins
-                               ref_genome=NULL, dbSNP = 144,                             # Detecting ref genome
-                               convert_ref_genome = "GRCh37",                            # Convert to HapMap3+ build if not already GRCh37
-                               impute_beta = TRUE, impute_se = TRUE,                     # Convert OR to beta and se to beta_se
-                               INFO_filter = 0.7,                                        # Filtering on INFO score - could be more strict (default 0.9)
-                               nThread = nb_cores(),
-                               mapping_file = sumstatsColHeaders,                        # Local mapping file
-                               return_data = TRUE, return_format = "data.table",
-                               save_path = tmp, force_new = TRUE) %>%                    
-          rename(POS = BP, A0 = A1, A1 = A2, BETA_SE = SE) %>%                           # Renaming to fit LDpred2 format
-          filter(!CHR %in% c("X", "Y") %>%
-          mutate(CHR = as.numeric(CHR))  # Converting X and Y chr to 23 and 24 
+if(ref_genome != "GRCH37") {
+  sumstats <- liftover(sumstats_dt = sumstats,
+                       ref_genome = ref_genome,
+                       convert_ref_genome = "GRCh37")
+}
 
-# Deleting the file that has been written to disc
-file.remove(tmp)
+# Renaming to fit snp_match format and filtering away sex chromosomes ---------------------------------------------------
+reformatted <- sumstats %>%
+  rename(POS = BP, A0 = A1, A1 = A2, BETA_SE = SE) %>%
+  filter(!CHR %in% c("X", "Y")) %>%
+  mutate(CHR = as.numeric(CHR))
 
-# Finding Hapmap overlap with sumstats -----------------------------------------------------------------------------------
-
-# Reading in HapMap3+ 
-info <- readRDS(runonce::download_file(
-  "https://figshare.com/ndownloader/files/37802721",
-  dir = hapmap_path, fname = "map_hm3_plus.rds"))
-
-# Making colnames lower case for snp_match
-colnames(reformatted) <- tolower(colnames(reformatted)) 
-
-# Finding sumstats/HapMap3+ overlap
-snp_info <- snp_match(reformatted, info)                                                                                      
-
-cat(nrow(snp_info), "variants in overlap with HapMap3+. \n")
-
-# Some manual checks -------------------------------------------------------------------------------------------------------
+# Some manual checks -----------------------------------------------------------------------------------------------------
+colnames(reformatted) <- tolower(colnames(reformatted))
 
 # Odds ratio -------------------------------------------------
-
 # If reported effect size is odds ratio, MungeSumstats does not convert se, as long as SE exists
-if("or" %in% colnames(snp_info)){
-  snp_info$beta_se = snp_info$beta/qnorm(1-snp_info$p/2) # beta/z
+if("or" %in% colnames(reformatted)){
+  reformatted$beta = with(reformatted, log(or))
+  reformatted$beta_se = with(reformatted, beta/qnorm(1-p/2)) # beta/z
 }
 
 # Effective population size ----------------------------------
 
-if(!"n_eff" %in% colnames(snp_info)){
-  if("neff_half" %in% colnames(snp_info)){
-    snp_info$n_eff = snp_info$neff_half * 2
+if(!"n_eff" %in% colnames(reformatted)){
+  if("neff_half" %in% colnames(reformatted)){
+    reformatted$n_eff = with(reformatted, neff_half * 2)
   } else {
-    if("n_cas" %in% colnames(snp_info)){
-        snp_info$n_eff = 4/(1/snp_info$n_cas + 1/snp_info$n_con)
+    if("n_cas" %in% colnames(reformatted)){
+        reformatted$n_eff = with(reformatted, 4/(1/n_cas + 1/n_con))
       }
   }
 }
@@ -100,31 +84,48 @@ if(!"n_eff" %in% colnames(snp_info)){
 # Making sure its in the sumstats 
 # - otherwise should be added manually
 assert("No effective population size in parsed sumstats",
-       "n_eff" %in% colnames(snp_info))
+       "n_eff" %in% colnames(reformatted))
 
 # Z score ----------------------------------------------------
-if(!"beta" %in% colnames(snp_info) & "z" %in% colnames(snp_info)){
-    snp_info$beta = with(snp_info, z / sqrt(2*p*(1-p)(n_eff + z^2)))  
-    snp_info$beta_se = with(snp_info, beta/qnorm(1-p/2)) # beta/z
+if(!"beta" %in% colnames(reformatted) & "z" %in% colnames(reformatted)){
+    reformatted$beta = with(reformatted, z / sqrt(2*p*(1-p)(n_eff + z^2)))  
+    reformatted$beta_se = with(reformatted, beta/qnorm(1-p/2)) # beta/z
 }
 
 # Allele frequency ------------------------------------------
 
 # Check if frq columns are on the form frq_a_X and frq_u_X
-colnames(snp_info)[grep("^fr?q_a_", colnames(snp_info))] <- "frq_cas"
-colnames(snp_info)[grep("^fr?q_u_", colnames(snp_info))] <- "frq_con"
+colnames(reformatted)[grep("^fr?q_a_", colnames(reformatted))] <- "frq_cas"
+colnames(reformatted)[grep("^fr?q_u_", colnames(reformatted))] <- "frq_con"
 
-if(!"frq" %in% colnames(snp_info)){
-  if("frq_cas" %in% colnames(snp_info)) {
-    snp_info$frq = (snp_info$frq_cas + snp_info$frq_con)/2
+if(!"frq" %in% colnames(reformatted)){
+  if("frq_cas" %in% colnames(reformatted)) {
+    reformatted$frq = with(reformatted, frq_cas + frq_con)/2)
   }
 }
+
+# Finding Hapmap overlap with sumstats -----------------------------------------------------------------------------------
+# Reading in HapMap3+ 
+info <- readRDS(runonce::download_file(
+  "https://figshare.com/ndownloader/files/37802721",
+  dir = hapmap_path, fname = "map_hm3_plus.rds"))
+
+# Finding sumstats/HapMap3+ overlap
+snp_info <- snp_match(reformatted, info, match.min.prop = 0.1)                                              
+
+cat(nrow(snp_info), "variants in overlap with HapMap3+. \n")
 
 # QC ------------------------------------------------------------------------------------------------------------------
 
 # Beta, beta_se, and n_eff  ---------------------------------------
 df_beta <- snp_info %>% 
   filter(beta != 0 & beta_se > 0 & n_eff > (0.7 * max(n_eff)))
+
+# INFO score ----------------------------------------------------
+if("info" %in% colnames(df_beta)) {
+  df_beta <- df_beta %>%
+    filter(info > 0.7)
+}
 
 # Allele frequency -----------------------------------------------
 if("frq" %in% colnames(df_beta)){         # If freq exists
@@ -167,15 +168,36 @@ dosage$map <- dosage$map %>%
 in_test <- vctrs::vec_in(df_beta[, c("chr", "pos")], dosage$map[, c("chr", "pos")])
 df_beta <- df_beta[in_test, ]                          
 
-
 # Making sure there are at least 60K variants in sumstats -----------------------------------------------------------------
 assert("Less than 60K variants remaining in summary statistics following QC and Hapmap3+/iPSYCH overlap.",
        nrow(df_beta) > 60000)
 cat(nrow(df_beta), "variants remaining in munged sumstats. \n")
 
-# Saving the parsed sumstats in the outputfile ------------------------------------------------------------------------------
-
+# Saving the parsed sumstats in the outputfile ---------------------------------------------------------------------------
 head(df_beta)
 saveRDS(df_beta, output)
 
 # saveRDS(df_beta, test_parsed) # for testing
+
+# Foelgefil --------------------------------------------------------------------------------------------------------------
+foelgefil <- data.frame(
+  ID = base_name,
+  Restrictions = NA,
+  Reported_Trait = NA,
+  PubMed_ID = NA,
+  First_Author = NA,
+  Journal = NA,
+  Title = NA,
+  Publication_Date = NA,
+  N = NA,
+  Ncase = NA,
+  Ncontrol = NA,
+  se = "beta",
+  M_or = nrow(sumstats),     # Variants in original sumstats
+  M_m = nrow(snp_info),      # Overlap with HapMap3+
+  M_qc = nrow(df_beta)       # Variants after QC and iPSYCH overlap
+)
+
+write.xlsx(foelgefil,
+           file = paste0("results/foelgefiler/", base_name, "_foelgefil.xlsx"),
+           rownames = FALSE, overwrite = TRUE)
