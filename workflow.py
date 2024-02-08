@@ -5,13 +5,6 @@
 gwf workflow to parse all GWAS sumstats in data folder and generate PRS from them 
 using LDpred2-auto and lassosum as implemented in LDpred2
 
-Example:
-	gwf run
-	
-Todo:
-	* Add arguments to gwf command to specify folder with input data and a 
-	  shrinkage coefficient if adjustment is relevant
-
 @Author: Ole S Hansen
 @Date: 
 
@@ -20,7 +13,7 @@ Todo:
 from gwf import Workflow, AnonymousTarget
 from datetime import date
 from code.aux.modpath import modpath
-from code.aux.input_paths import work_dir
+from code.aux.input_paths import work_dir, sumstat_folder
 
 gwf = Workflow()
 
@@ -42,7 +35,7 @@ def munge_sumstats(inputfile):
 	working_dir = work_dir
 	options = {
 		'memory': '50g',
-		'walltime': '01:00:00',
+		'walltime': '00:30:00',
 		'cores': '23'
 	}
 	
@@ -76,7 +69,7 @@ def compute_pgs(inputfile):
 	working_dir = work_dir
 	options = {
 		'memory': '60g',
-		'walltime': '12:00:00',
+		'walltime': '03:00:00',
 		'cores': '23'
 	}
 
@@ -102,7 +95,7 @@ def get_pgs_name(idx, target):
   return f'ldpred2_{filename}'
 
 # Input
-sumstats = gwf.glob("data/ipsych_test/*")
+sumstats = gwf.glob(sumstat_folder)
 
 # Mapping over the inputs
 parse_sumstats = gwf.map(munge_sumstats, sumstats, name=get_munge_name)
