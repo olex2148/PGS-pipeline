@@ -55,7 +55,8 @@ reformatted <- format_sumstats(path=sumstats,                                   
                                return_data = TRUE, return_format = "data.table",
                                save_path = tmp, force_new = TRUE) %>%                    
           rename(POS = BP, A0 = A1, A1 = A2, BETA_SE = SE) %>%                           # Renaming to fit LDpred2 format
-          mutate(CHR = ifelse(CHR == "X", 23, ifelse(CHR == "Y", 24, as.numeric(CHR))))  # Converting X and Y chr to 23 and 24 
+          filter(!CHR %in% c("X", "Y") %>%
+          mutate(CHR = as.numeric(CHR))  # Converting X and Y chr to 23 and 24 
 
 # Deleting the file that has been written to disc
 file.remove(tmp)
