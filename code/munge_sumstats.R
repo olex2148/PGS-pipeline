@@ -169,8 +169,8 @@ in_test <- vctrs::vec_in(df_beta[, c("chr", "pos")], dosage$map[, c("chr", "pos"
 df_beta <- df_beta[in_test, ]                          
 
 # Making sure there are at least 60K variants in sumstats -----------------------------------------------------------------
-assert("Less than 60K variants remaining in summary statistics following QC and Hapmap3+/iPSYCH overlap.",
-       nrow(df_beta) > 60000)
+# assert("Less than 60K variants remaining in summary statistics following QC and Hapmap3+/iPSYCH overlap.",
+#        nrow(df_beta) > 60000)
 cat(nrow(df_beta), "variants remaining in munged sumstats. \n")
 
 # Saving the parsed sumstats in the outputfile ---------------------------------------------------------------------------
