@@ -58,14 +58,9 @@ def compute_pgs(inputfile):
 
 	base = modpath(inputfile, parent=(''), suffix=('_munged.rds', ''))      # Getting the base name from the inputfile 
 	base_path = f'results/{base}/{base}'                                    # New path with sumstat-specific folder (and filename without suffix)
-
-	model_out = f'{base_path}_raw_models.rds'                               # Models, parameters, and scores are put in a folder specific to the sumstats
-	scores_out = f'{base_path}_scores.rds'
-	parameters_out = f'{base_path}_auto_parameters.rds'
-	# foelgefil = f'results/foelgefiler/{today}/{base}_foelgefil.xlsx'          # Foelgefil is put in a separate folder specific to the batch run (date in folder name)
-
+	
 	inputs = [inputfile]
-	outputs = [model_out, scores_out, parameters_out]
+	outputs = [f'{base_path}_raw_models.rds', f'{base_path}_scores.rds', f'{base_path}_auto_parameters.rds']
 	working_dir = work_dir
 	options = {
 		'memory': '30g',
