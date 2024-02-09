@@ -64,7 +64,8 @@ def compute_pgs(inputfile):
 	outputs = [
 		f'{base_path}_raw_models.rds', 
 		f'{base_path}_scores.rds', 
-		f'{base_path}_auto_parameters.rds']
+		f'{base_path}_auto_parameters.rds'
+	]
 	options = {
 		'memory': '30g',
 		'walltime': '02:00:00',
