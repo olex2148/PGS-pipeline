@@ -9,9 +9,6 @@
 #' 
 #' @Todo
 #'    - Make general for continuous traits as well
-#'    - min perc_kept
-#'    - Fix foelgefil
-#'    - Fix pred
 
 suppressPackageStartupMessages({
   library(bigsnpr)
@@ -131,16 +128,19 @@ q <- plot_grid(
 ggsave(paste0(base_path, "_1st_kept_chain.jpeg"), q)
 
 # Saving auto parameters -------------------------------------------------------------------------------------------
-
+cat("h2 quantiles \n")
 all_h2 <- sapply(multi_auto[keep], function(auto) tail(auto$path_h2_est, 500))
-quantile(all_h2, c(0.5, 0.025, 0.975))
+(quant_h2 <- quantile(all_h2, c(0.5, 0.025, 0.975)))
 
+cat("p quantiles \n")
 all_p <- sapply(multi_auto[keep], function(auto) tail(auto$path_p_est, 500))
-quantile(all_p, c(0.5, 0.025, 0.975))
+(quant_p <- quantile(all_p, c(0.5, 0.025, 0.975)))
 
+cat("Alpha quantiles \n")
 all_alpha <- sapply(multi_auto[keep], function(auto) tail(auto$path_alpha_est, 500))
 quantile(all_alpha, c(0.5, 0.025, 0.975), na.rm = TRUE)
 
+cat("r2 quantiles \n")
 bsamp <- lapply(multi_auto[keep], function(auto) auto$sample_beta)
 all_r2 <- do.call("cbind", lapply(seq_along(bsamp), function(ic) {
   b1 <- bsamp[[ic]]
@@ -151,7 +151,7 @@ all_r2 <- do.call("cbind", lapply(seq_along(bsamp), function(ic) {
   
   b2Rb1 <- as.matrix(Matrix::crossprod(b2, Rb1))
 }))
-quantile(all_r2, c(0.5, 0.025, 0.975))
+(quant_r2 <- quantile(all_r2, c(0.5, 0.025, 0.975)))
 
 saveRDS(list(r2 = all_r2, h2 = all_h2, alpha = all_alpha, p = all_p),
         paste0(base_path, "_auto_parameters.rds"))
@@ -184,47 +184,24 @@ best_lassosum <- params %>%
   pull(id) %>% 
   beta_lassosum[, .]
 
-
-# Saving foelgefil ---------------------------------------------------------------------------------------------------------
-# Getting mean h2 and p from chains and saving foelgefil
-# h2_mean <- mean(all_h2)
-# h2_se <- sd(all_h2) / sqrt(sum(keep)) # sd / sqrt(n)
-# 
-# p_mean <- mean(all_p)
-# p_se <- sd(all_p) / sqrt(sum(keep)) # sd / sqrt(n)
-# 
-# foelgefil <- data.frame(
-#   id = base_name,
-#   restrictions = NA,
-#   reported_trait = NA,
-#   pubmed_id = NA,
-#   first_author = NA,
-#   journal = NA,
-#   title = NA,
-#   publication_date = NA,
-#   N = NA,
-#   Ncase = NA,
-#   Ncontrol = NA,
-#   se = "beta",
-#   M_or = nrow(sumstats), # Variants in the original sumstats
-#   M_m = nrow(info_snp),  # Overlap with HapMap and iPSYCH
-#   M_qc = nrow(df_beta),  # Variants after QC
-#   m_h2 = h2_mean,        # Ldpred2 h2 mean from kept chains
-#   se_he = h2_se,         # h2 se
-#   m_p = p_mean,          # LDpred2 polygenicity mean from kept chains
-#   se_p = p_se,           # p se
-#   h2_init = h2_init      # LDSC h2
-#   
-# )
-# 
-# write.xlsx(foelgefil, 
-#            file = paste0("results/foelgefiler/", base_name, "_foelgefil.xlsx"), 
-#            rownames = FALSE)
-
 # Saving the raw models                 
 saveRDS(list(ldsc = ldsc, ldpred2 = multi_auto, lassosum = beta_lassosum),
         paste0(base_path, "_raw_models.rds"))
+
+# Adding metrics to foelgefil
+foelgefil <- read.xlsx(xlsxFile = paste0("results/foelgefiler/", Sys.Date(), "/", base_name, "_foelgefil.xlsx"))
+
+foelgefil$h2_init <- h2_init
+foelgefil$h2_auto <- quant_h2[1]
+foelgefil$h2_2.5 <- quant_h2[2]
+foelgefil$h2_97.5 <- quant_h2[3]
+foelgefilp2_auto <- quant_p[1]
+foelgefil$p_2.5 <- quant_p[2]
+foelgefil$p_97.5 <- quant_p[3]
   
+write.xlsx(foelgefil,
+           file = paste0("results/foelgefiler/", Sys.Date(), "/", base_name, "_foelgefil.xlsx"),
+           rownames = FALSE)
   
 # Predicting in iPSYCH ------------------------------------------------------------------------------------------------------
 
