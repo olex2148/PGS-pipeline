@@ -23,7 +23,9 @@ suppressPackageStartupMessages({
 args = commandArgs(trailingOnly = TRUE)
 munged_sumstats <- args[1]
 base_path <- args[2]
-base_name <- sapply(strsplit(base_path, split='/', fixed=TRUE), function(x) (x[3])) # Removing the path in front of base name
+foelgefil <- args[3]
+
+base_name <- basename(base_path)
 
 source("code/aux/input_paths.R")
 
@@ -189,7 +191,7 @@ saveRDS(list(ldsc = ldsc, ldpred2 = multi_auto, lassosum = beta_lassosum),
         paste0(base_path, "_raw_models.rds"))
 
 # Adding metrics to foelgefil
-foelgefil <- read.xlsx(xlsxFile = paste0("results/foelgefiler/", Sys.Date(), "/", base_name, "_foelgefil.xlsx"))
+foelgefil <- read.xlsx(xlsxFile = foelgefil)
 
 foelgefil$h2_init <- h2_init
 foelgefil$h2_auto <- quant_h2[1]
@@ -200,7 +202,7 @@ foelgefil$p_2.5 <- quant_p[2]
 foelgefil$p_97.5 <- quant_p[3]
   
 write.xlsx(foelgefil,
-           file = paste0("results/foelgefiler/", Sys.Date(), "/", base_name, "_foelgefil.xlsx"),
+           file = foelgefil,
            rownames = FALSE)
   
 # Predicting in iPSYCH ------------------------------------------------------------------------------------------------------
