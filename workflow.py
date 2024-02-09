@@ -9,7 +9,7 @@ using LDpred2-auto and lassosum as implemented in LDpred2
 @Date: 
 
 """
-
+import os
 from gwf import Workflow, AnonymousTarget
 from datetime import date
 from code.aux.modpath import modpath
@@ -23,12 +23,13 @@ def munge_sumstats(inputfile):
 	Template for running the r script "prepare_and_parse_sumstats.R" which parses GWAS summary statistics
 	'''
 
+	# Name of folder to be created in steps and results
+	folder_name = os.path.split(inputfile)[0].split("/")[-1]
+	
 	# Using modpath() to create name of output file from inputfile - keeps basename,
 	# but gets another path and another suffix
-	munged_sumstats = modpath(inputfile, parent=('steps/munged_sumstats'), suffix=('_munged.rds'))
+	munged_sumstats = modpath(inputfile, parent=(f'steps/munged_sumstats/{folder_name}'), suffix=('_munged.rds'))
 	
-	base_name = modpath(inputfile, parent=(''), suffix=(''))      # Getting the base name from the inputfile 
-
 	# Defining inputs, outputs and ressources
 	inputs = [inputfile]
 	outputs = [munged_sumstats]
@@ -42,9 +43,10 @@ def munge_sumstats(inputfile):
 	# Command to be run in the terminal
 	spec = f'''
 	
-	mkdir -p results/{base_name}
+	mkdir -p results/foelgefiler/{folder_name}
+ 	mkdir -p steps/munged_sumstats/{folder_name}
 
-	Rscript code/munge_sumstats.R {inputfile} {base_name}
+	Rscript code/munge_sumstats.R {inputfile} {munged_sumstats}
 	
 	'''
 
@@ -54,10 +56,11 @@ def compute_pgs(inputfile):
 	'''
 	Template for running the r script "pgs_model.R" which computes PGS models using parsed sumstats
 	'''
-	today = date.today()
+	# Name of folder to be created in steps and results
+	folder_name = os.path.split(inputfile)[0].split("/")[-1]
 
-	base = modpath(inputfile, parent=(''), suffix=('_munged.rds', ''))      # Getting the base name from the inputfile 
-	base_path = f'results/{base}/{base}'                                    # New path with sumstat-specific folder (and filename without suffix)
+	base_name = modpath(inputfile, parent=(''), suffix=('_munged.rds', ''))      # Getting the base name from the inputfile 
+	base_path = f'results/{base_name}/{base_name}'                                    # New path with sumstat-specific folder (and filename without suffix)
 
 	working_dir = work_dir
 	inputs = [inputfile]
@@ -74,7 +77,7 @@ def compute_pgs(inputfile):
 
 	spec = f'''
 
-	mkdir -p results/foelgefiler/{today}
+ 	mkdir -p results/{base_name}
 
 	Rscript code/pgs_model.R {inputfile} {base_path}
 	
