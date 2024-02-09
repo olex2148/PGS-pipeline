@@ -34,8 +34,8 @@ def munge_sumstats(inputfile):
 	outputs = [munged_sumstats]
 	working_dir = work_dir
 	options = {
-		'memory': '50g',
-		'walltime': '00:30:00',
+		'memory': '20g',
+		'walltime': '00:10:00',
 		'cores': '23'
 	}
 	
@@ -68,8 +68,8 @@ def compute_pgs(inputfile):
 	outputs = [model_out, scores_out, parameters_out]
 	working_dir = work_dir
 	options = {
-		'memory': '60g',
-		'walltime': '03:00:00',
+		'memory': '30g',
+		'walltime': '02:00:00',
 		'cores': '23'
 	}
 
