@@ -58,10 +58,13 @@ def compute_pgs(inputfile):
 
 	base = modpath(inputfile, parent=(''), suffix=('_munged.rds', ''))      # Getting the base name from the inputfile 
 	base_path = f'results/{base}/{base}'                                    # New path with sumstat-specific folder (and filename without suffix)
-	
-	inputs = [inputfile]
-	outputs = [f'{base_path}_raw_models.rds', f'{base_path}_scores.rds', f'{base_path}_auto_parameters.rds']
+
 	working_dir = work_dir
+	inputs = [inputfile]
+	outputs = [
+		f'{base_path}_raw_models.rds', 
+		f'{base_path}_scores.rds', 
+		f'{base_path}_auto_parameters.rds']
 	options = {
 		'memory': '30g',
 		'walltime': '02:00:00',
