@@ -100,7 +100,7 @@ colnames(reformatted)[grep("^fr?q_u_", colnames(reformatted))] <- "frq_con"
 
 if(!"frq" %in% colnames(reformatted)){
   if("frq_cas" %in% colnames(reformatted)) {
-    reformatted$frq = with(reformatted, frq_cas + frq_con)/2)
+    reformatted$frq = with(reformatted, frq_cas + frq_con/2)
   }
 }
 
