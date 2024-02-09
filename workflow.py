@@ -28,11 +28,12 @@ def munge_sumstats(inputfile):
 	
 	# Using modpath() to create name of output file from inputfile - keeps basename,
 	# but gets another path and another suffix
-	munged_sumstats = modpath(inputfile, parent=(f'steps/munged_sumstats/{folder_name}'), suffix=('_munged.rds'))
+	munged_sumstats = modpath(inputfile, parent=(f'steps/munged_sumstats/{folder_name}'), suffix=('_munged'))
+	foelgefil = modpath(inputfile, parent=(f'steps/foelgefiler/{folder_name}'), suffix=('_foelgefil.xlsx'))
 	
 	# Defining inputs, outputs and ressources
 	inputs = [inputfile]
-	outputs = [munged_sumstats]
+	outputs = [munged_sumstats, foelgefil]
 	working_dir = work_dir
 	options = {
 		'memory': '20g',
@@ -46,7 +47,7 @@ def munge_sumstats(inputfile):
 	mkdir -p results/foelgefiler/{folder_name}
  	mkdir -p steps/munged_sumstats/{folder_name}
 
-	Rscript code/munge_sumstats.R {inputfile} {munged_sumstats}
+	Rscript code/munge_sumstats.R {inputfile} {munged_sumstats} {foelgefil}
 	
 	'''
 
@@ -59,11 +60,12 @@ def compute_pgs(inputfile):
 	# Name of folder to be created in steps and results
 	folder_name = os.path.split(inputfile)[0].split("/")[-1]
 
+	foelgefil = modpath(inputfile, parent=(f'steps/foelgefiler/{folder_name}'), suffix=('_foelgefil.xlsx'))
 	base_name = modpath(inputfile, parent=(''), suffix=('_munged.rds', ''))      # Getting the base name from the inputfile 
 	base_path = f'results/{base_name}/{base_name}'                                    # New path with sumstat-specific folder (and filename without suffix)
 
 	working_dir = work_dir
-	inputs = [inputfile]
+	inputs = [inputfile, foelgefil]
 	outputs = [
 		f'{base_path}_raw_models.rds', 
 		f'{base_path}_scores.rds', 
@@ -77,9 +79,9 @@ def compute_pgs(inputfile):
 
 	spec = f'''
 
- 	mkdir -p results/{base_name}
+ 	mkdir -p results/{folder_name}/{base_name}
 
-	Rscript code/pgs_model.R {inputfile} {base_path}
+	Rscript code/pgs_model.R {inputfile} {base_path} {foelgefil}
 	
 	'''
 	
