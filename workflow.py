@@ -53,7 +53,7 @@ def munge_sumstats(inputfile):
 
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def compute_pgs(inputfile):
+def compute_pgs(inputfile, foelgefil):
 	'''
 	Template for running the r script "pgs_model.R" which computes PGS models using parsed sumstats
 	'''
@@ -61,7 +61,7 @@ def compute_pgs(inputfile):
 	folder_name = os.path.split(inputfile)[0].split("/")[-1]
 
 	foelgefil = modpath(inputfile, parent=(f'steps/foelgefiler/{folder_name}'), suffix=('_foelgefil.xlsx'))
-	base_name = modpath(inputfile, parent=(''), suffix=('_munged.rds', ''))      # Getting the base name from the inputfile 
+	base_name = modpath(inputfile, parent=(''), suffix=('_munged', ''))      # Getting the base name from the inputfile 
 	base_path = f'results/{base_name}/{base_name}'                                    # New path with sumstat-specific folder (and filename without suffix)
 
 	working_dir = work_dir
@@ -95,7 +95,7 @@ def get_munge_name(idx, target):
   return f'munge_{filename}'
 
 def get_pgs_name(idx, target):
-  filename = modpath(target.inputs[0], parent='', suffix=('_munged.rds', ''))
+  filename = modpath(target.inputs[0], parent='', suffix=('_munged', ''))
   return f'ldpred2_{filename}'
 
 # Input
