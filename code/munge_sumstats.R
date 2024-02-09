@@ -37,9 +37,10 @@ source("code/aux/input_paths.R")
 # Command line arguments for this script
 args <- commandArgs(trailingOnly = TRUE)
 sumstats <- read_sumstats(args[1])
-base_name <- args[2]
+output_path <- args[2]
+foelgefil <- args[3]
 
-output <- paste0("steps/munged_sumstats/", base_name, "_munged.rds") # Final output of script
+base_name <- basename(output_path)
 
 # Standardizing header
 sumstats <- standardise_header(sumstats, mapping_file = sumstatsColHeaders, return_list = FALSE)
@@ -199,5 +200,5 @@ foelgefil <- data.frame(
 )
 
 write.xlsx(foelgefil,
-           file = paste0("results/foelgefiler/", Sys.Date(), "/", base_name, "_foelgefil.xlsx"),
+           file = foelgefil,
            rownames = FALSE, overwrite = TRUE)
