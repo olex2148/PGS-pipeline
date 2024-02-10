@@ -27,7 +27,6 @@ suppressPackageStartupMessages({
   library(bigsnpr)
   library(testit)
   library(ggplot2)
-  library(openxlsx)
   library(rjson)
 })
 
@@ -40,11 +39,10 @@ load("data/sumstatsColHeaders.rda")
 args <- commandArgs(trailingOnly = TRUE)
 sumstats <- read_sumstats(args[1])
 output_path <- args[2]
-foelgefil <- args[3]
+res_folder <- args[3]
 
+# Removing path and suffix from input str
 base_name <- gsub("_munged.rds", "", basename(output_path))
-path <- unlist(strsplit(dirname(output_path), "/"))
-folder_name <- path[length(path)]
 
 # Standardizing header
 sumstats <- standardise_header(sumstats, mapping_file = sumstatsColHeaders, return_list = FALSE)
@@ -154,7 +152,7 @@ if("frq" %in% colnames(df_beta)){         # If freq exists
          y = "Standard deviations derived from the summary statistics",
          color = "To remove?")
   
-  ggsave(paste0("results/", folder_name, "/", base_name, "/", base_name, "_QC.jpeg"), p)
+  ggsave(paste0(res_folder, "/", base_name, "_QC.jpeg"), p)
   
   df_beta <- df_beta[!is_bad, ] 
   
@@ -203,6 +201,6 @@ foelgefil_df <- data.frame(
   M_qc = nrow(df_beta)       # Variants after QC and iPSYCH overlap
 )
 
-write.xlsx(foelgefil_df,
-           file = foelgefil,
-           rownames = FALSE, overwrite = TRUE)
+write.table(foelgefil_df,
+           file = paste0(res_folder, "/", base_name, "_foelgefil.csv"),
+           sep = "\t", row.names = FALSE, append = FALSE, quote = FALSE)
