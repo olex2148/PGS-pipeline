@@ -43,7 +43,7 @@ dosage$map <- dosage$map %>%
 
 # Reading in parsed sumstats
 # df_beta = readRDS(test_parsed) # For testing
-df_beta = readRDS(paste0(munged_sumstats, ".rds"))
+df_beta = readRDS(munged_sumstats)
 
 # Running LDSC -------------------------------------------------------------------------------------------------------
 cat("Running LDSC \n")
