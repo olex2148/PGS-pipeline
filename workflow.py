@@ -11,6 +11,7 @@ using LDpred2-auto and lassosum as implemented in LDpred2
 """
 import os, json
 from gwf import Workflow, AnonymousTarget
+from gwf.workflow import collect
 from datetime import date
 from code.aux.modpath import modpath
 
@@ -29,12 +30,15 @@ def munge_sumstats(inputfile):
 	# Using modpath() to create name of output file from inputfile - keeps basename,
 	# but gets another path and another suffix
 	base_name = modpath(inputfile, parent='', suffix='')
-	munged_sumstats = modpath(inputfile, parent=(f'steps/munged_sumstats/{folder_name}'), suffix=('_munged.rds'))
-	foelgefil = modpath(inputfile, parent=(f'results/{folder_name}/foelgefiler'), suffix=('_foelgefil.xlsx'))
+	
+	res_folder = f'results/{folder_name}/{base_name}'
+	munged_folder = f'steps/munged_sumstats/{folder_name}'
+	
+	munged_sumstats = f'{munged_folder}/{base_name}_munged.rds'
 	
 	# Defining inputs, outputs and ressources
-	inputs = [inputfile]
-	outputs = [munged_sumstats, foelgefil]
+	inputs = {'sumstats': inputfile}
+	outputs = [munged_sumstats]
 	working_dir = paths['work_dir']
 	options = {
 		'memory': '20g',
@@ -45,17 +49,16 @@ def munge_sumstats(inputfile):
 	# Command to be run in the terminal
 	spec = f'''
 	
- 	mkdir -p steps/munged_sumstats/{folder_name}
- 	mkdir -p results/{folder_name}/foelgefiler
- 	mkdir -p results/{folder_name}/{base_name}
+ 	mkdir -p {res_folder}
+ 	mkdir -p {munged_folder}
 
-	Rscript code/munge_sumstats.R {inputfile} {munged_sumstats} {foelgefil}
+	Rscript code/munge_sumstats.R {inputfile} {munged_sumstats} {res_folder}
 	
 	'''
 
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
-def compute_pgs(inputfile, foelgefil):
+def compute_pgs(inputfile):
 	'''
 	Template for running the r script "pgs_model.R" which computes PGS models using parsed sumstats
 	'''
@@ -64,14 +67,16 @@ def compute_pgs(inputfile, foelgefil):
 
 	base_name = modpath(inputfile, parent=(''), suffix=('_munged.rds', ''))             # Getting the base name from the inputfile 
 	output_path = f'results/{folder_name}/{base_name}/{base_name}'                      # New path with sumstat-specific folder (and filename without suffix)
+  foelgefil = f'{output_path}_foelgefil.csv'
 
 	working_dir = paths['work_dir']
-	inputs = [inputfile]
-	outputs = [
-		f'{output_path}_raw_models.rds', 
-		f'{output_path}_scores.rds', 
-		f'{output_path}_auto_parameters.rds'
-	]
+	inputs = {'parsed_sumstats': inputfile}
+	outputs = {
+		'models': f'{output_path}_raw_models.rds', 
+		'scores': f'{output_path}_scores.rds', 
+		'autoparamters': f'{output_path}_auto_parameters.rds',
+		'foelgefil': foelgefil
+	}
 	options = {
 		'memory': '20g',
 		'walltime': '02:00:00',
@@ -86,15 +91,34 @@ def compute_pgs(inputfile, foelgefil):
 	
 	return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
 
+def concat_files(paths):
+  folder_name = os.path.split(paths[0])[0].split('/')[-2]
+  output_path = f'results/{folder_name}/{folder_name_foelgefil.csv}'
+  
+  inputs = {'paths': paths}
+  outputs = {'concatenated_foelgefil': output_path}
+  options = {
+    'memory': '2g',
+    'walltime': '00:05:00'
+  }
+  
+  spec = f'''
+  
+  cat {paths} > {output_path}
+  
+  '''
+  
+  return AnonymousTarget(inputs=inputs, outputs=outputs, options=options, spec=spec)
+
 ### Defining targets
 
 # Naming functions
 def get_munge_name(idx, target):
-  filename = modpath(target.inputs[0], parent='', suffix='')
+  filename = modpath(target.inputs['sumstats'], parent='', suffix='')
   return f'munge_{filename}'
 
 def get_pgs_name(idx, target):
-  filename = modpath(target.inputs[0], parent='', suffix=('_munged.rds', ''))
+  filename = modpath(target.inputs['parsed_sumstats'], parent='', suffix=('_munged.rds', ''))
   return f'ldpred2_{filename}'
 
 # Input
@@ -104,3 +128,10 @@ sumstats = gwf.glob(paths['sumstat_folder'])
 parse_sumstats = gwf.map(munge_sumstats, sumstats, name=get_munge_name)
 compute_scores = gwf.map(compute_pgs, parse_sumstats.outputs, name=get_pgs_name)
 
+gwf.target_from_template(
+  name='concatenate_foelgefiler',
+  concat_files(
+    paths=**collect(compute_scores.outputs, ['foelgefil']),
+    output_path=f'{folder_name}_foelgefil.csv'
+  )
+)
