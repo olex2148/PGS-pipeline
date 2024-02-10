@@ -26,7 +26,7 @@ munged_sumstats <- args[1]
 base_path <- args[2]
 foelgefil <- args[3]
 
-base_name <- basename(base_path)
+base_name <- gsub(".rds", "", basename(base_path))
 
 paths <- fromJSON(file = "data/paths.json")
 

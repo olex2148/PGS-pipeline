@@ -60,16 +60,15 @@ def compute_pgs(inputfile, foelgefil):
 	# Name of folder to be created in steps and results
 	folder_name = os.path.split(inputfile)[0].split("/")[-1]
 
-	foelgefil = modpath(inputfile, parent=(f'results/foelgefiler/{folder_name}'), suffix=('_munged.rds', '_foelgefil.xlsx'))
-	base_name = modpath(inputfile, parent=(''), suffix=('_munged.rds', ''))      # Getting the base name from the inputfile 
-	base_path = f'results/{base_name}/{base_name}'                                    # New path with sumstat-specific folder (and filename without suffix)
+	base_name = modpath(inputfile, parent=(''), suffix=('_munged.rds', ''))             # Getting the base name from the inputfile 
+	output_path = f'results/{base_name}/{base_name}'                                    # New path with sumstat-specific folder (and filename without suffix)
 
 	working_dir = paths['work_dir']
 	inputs = [inputfile, foelgefil]
 	outputs = [
-		f'{base_path}_raw_models.rds', 
-		f'{base_path}_scores.rds', 
-		f'{base_path}_auto_parameters.rds'
+		f'{output_path}_raw_models.rds', 
+		f'{output_path}_scores.rds', 
+		f'{output_path}_auto_parameters.rds'
 	]
 	options = {
 		'memory': '30g',
@@ -81,7 +80,7 @@ def compute_pgs(inputfile, foelgefil):
 
  	mkdir -p results/{folder_name}/{base_name}
 
-	Rscript code/pgs_model.R {inputfile} {base_path} {foelgefil}
+	Rscript code/pgs_model.R {inputfile} {output_path} {foelgefil}
 	
 	'''
 	
