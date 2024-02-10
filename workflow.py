@@ -15,7 +15,7 @@ from datetime import date
 from code.aux.modpath import modpath
 
 gwf = Workflow()
-config = json.load(open('data/paths.json'))
+paths = json.load(open('data/paths.json'))
 
 ### Defining gwf templates
 def munge_sumstats(inputfile):
@@ -34,7 +34,7 @@ def munge_sumstats(inputfile):
 	# Defining inputs, outputs and ressources
 	inputs = [inputfile]
 	outputs = [munged_sumstats, foelgefil]
-	working_dir = config['work_dir']
+	working_dir = paths['work_dir']
 	options = {
 		'memory': '20g',
 		'walltime': '00:10:00',
@@ -64,7 +64,7 @@ def compute_pgs(inputfile, foelgefil):
 	base_name = modpath(inputfile, parent=(''), suffix=('_munged', ''))      # Getting the base name from the inputfile 
 	base_path = f'results/{base_name}/{base_name}'                                    # New path with sumstat-specific folder (and filename without suffix)
 
-	working_dir = config['work_dir']
+	working_dir = paths['work_dir']
 	inputs = [inputfile, foelgefil]
 	outputs = [
 		f'{base_path}_raw_models.rds', 
@@ -99,7 +99,7 @@ def get_pgs_name(idx, target):
   return f'ldpred2_{filename}'
 
 # Input
-sumstats = gwf.glob(config['sumstat_folder'])
+sumstats = gwf.glob(paths['sumstat_folder'])
 
 # Mapping over the inputs
 parse_sumstats = gwf.map(munge_sumstats, sumstats, name=get_munge_name)

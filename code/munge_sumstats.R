@@ -28,11 +28,13 @@ suppressPackageStartupMessages({
   library(testit)
   library(ggplot2)
   library(openxlsx)
+  library(rjson)
 })
 
 # Input and output -----------------------------------------------------------------
-source("code/aux/input_paths.R")
-# sumstats = read_sumstats(test_path) # For testing
+paths <- fromJSON(file = "data/paths.json")
+load("data/sumstatsColHeaders.rda")
+# sumstats = read_sumstats(paths$test_path) # For testing
 
 # Command line arguments for this script
 args <- commandArgs(trailingOnly = TRUE)
@@ -109,7 +111,7 @@ if(!"frq" %in% colnames(reformatted)){
 # Reading in HapMap3+ 
 info <- readRDS(runonce::download_file(
   "https://figshare.com/ndownloader/files/37802721",
-  dir = hapmap_path, fname = "map_hm3_plus.rds"))
+  dir = paths$hapmap_path, fname = "map_hm3_plus.rds"))
 
 # Finding sumstats/HapMap3+ overlap
 snp_info <- snp_match(reformatted, info, match.min.prop = 0.1)                                              
@@ -178,7 +180,7 @@ cat(nrow(df_beta), "variants remaining in munged sumstats. \n")
 head(df_beta)
 saveRDS(df_beta, paste0(output_path, ".rds"))
 
-# saveRDS(df_beta, test_parsed) # for testing
+# saveRDS(df_beta, paths$test_parsed) # for testing
 
 # Foelgefil --------------------------------------------------------------------------------------------------------------
 foelgefil_df <- data.frame(

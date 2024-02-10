@@ -17,6 +17,7 @@ suppressPackageStartupMessages({
   library(testit)
   library(openxlsx)
   library(data.table)
+  library(rjson)
 })
 
 # Command line arguments for this script
@@ -27,16 +28,15 @@ foelgefil <- args[3]
 
 base_name <- basename(base_path)
 
-source("code/aux/input_paths.R")
+paths <- fromJSON(file = "data/paths.json")
 
 # Loading data -------------------------------------------------------------------------------------------------
 # Reading in HapMap3+ 
 info <- readRDS(runonce::download_file(
   "https://figshare.com/ndownloader/files/37802721",
-  dir = hapmap_path, fname = "map_hm3_plus.rds"))
+  dir = paths$hapmap_path, fname = "map_hm3_plus.rds"))
 
 # Reading in iPSYCH data
-dosage <- snp_attach(dosage_path) 
 dosage$map <- dosage$map %>% 
   rename("chr" = "CHR", "pos" = "POS", "a0" = "a1", "a1" = "a2")
 
@@ -72,7 +72,7 @@ corr <- runonce::save_run({
     ## indices in corr_chr
     ind.chr3 <- match(ind.chr2, which(info$chr == chr))
     
-    corr_chr <- readRDS(paste0(ld_blocks_path, chr, ".rds"))[ind.chr3, ind.chr3]
+    corr_chr <- readRDS(paste0(paths$ld_blocks_path, chr, ".rds"))[ind.chr3, ind.chr3]
     
     if (chr == 1) {
       corr <- as_SFBM(corr_chr, corr_dir, compact = TRUE)
@@ -208,8 +208,8 @@ write.xlsx(foelgefil_df,
 # Predicting in iPSYCH ------------------------------------------------------------------------------------------------------
 
 # Reading in PCs and info for covariates
-pcs <- readRDS(pcs_path)
-meta <- fread(meta_path)
+pcs <- readRDS(paths$pcs_path)
+meta <- fread(paths$meta_path)
 
 # Computing sex and age
 covariates_df <- dosage$fam %>% 
