@@ -170,7 +170,7 @@ dosage$map <- dosage$map %>%
   rename("chr" = "CHR", "pos" = "POS", "a0" = "a1", "a1" = "a2")
 
 # Finding iPSYCH overlap
-in_test <- vctrs::vec_in(df_beta[, c("chr", "pos")], dosage$map[, c("chr", "pos")])
+in_test <- vctrs::vec_in(df_beta[, c("chr", "pos", "a0", "a1")], dosage$map[, c("chr", "pos", "a0", "a1")])
 df_beta <- df_beta[in_test, ]                          
 
 # Making sure there are at least 60K variants in sumstats -----------------------------------------------------------------
