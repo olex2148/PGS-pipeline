@@ -37,6 +37,7 @@ info <- readRDS(runonce::download_file(
   dir = paths$hapmap_path, fname = "map_hm3_plus.rds"))
 
 # Reading in iPSYCH data
+dosage <- snp_attach(paths$dosage_path) 
 dosage$map <- dosage$map %>% 
   rename("chr" = "CHR", "pos" = "POS", "a0" = "a1", "a1" = "a2")
 
