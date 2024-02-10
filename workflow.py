@@ -28,7 +28,7 @@ def munge_sumstats(inputfile):
 	
 	# Using modpath() to create name of output file from inputfile - keeps basename,
 	# but gets another path and another suffix
-	munged_sumstats = modpath(inputfile, parent=(f'steps/munged_sumstats/{folder_name}'), suffix=('_munged'))
+	munged_sumstats = modpath(inputfile, parent=(f'steps/munged_sumstats/{folder_name}'), suffix=('_munged.rds'))
 	foelgefil = modpath(inputfile, parent=(f'results/foelgefiler/{folder_name}'), suffix=('_foelgefil.xlsx'))
 	
 	# Defining inputs, outputs and ressources
@@ -60,8 +60,8 @@ def compute_pgs(inputfile, foelgefil):
 	# Name of folder to be created in steps and results
 	folder_name = os.path.split(inputfile)[0].split("/")[-1]
 
-	foelgefil = modpath(inputfile, parent=(f'results/foelgefiler/{folder_name}'), suffix=('_munged', '_foelgefil.xlsx'))
-	base_name = modpath(inputfile, parent=(''), suffix=('_munged', ''))      # Getting the base name from the inputfile 
+	foelgefil = modpath(inputfile, parent=(f'results/foelgefiler/{folder_name}'), suffix=('_munged.rds', '_foelgefil.xlsx'))
+	base_name = modpath(inputfile, parent=(''), suffix=('_munged.rds', ''))      # Getting the base name from the inputfile 
 	base_path = f'results/{base_name}/{base_name}'                                    # New path with sumstat-specific folder (and filename without suffix)
 
 	working_dir = paths['work_dir']
@@ -95,7 +95,7 @@ def get_munge_name(idx, target):
   return f'munge_{filename}'
 
 def get_pgs_name(idx, target):
-  filename = modpath(target.inputs[0], parent='', suffix=('_munged', ''))
+  filename = modpath(target.inputs[0], parent='', suffix=('_munged.rds', ''))
   return f'ldpred2_{filename}'
 
 # Input

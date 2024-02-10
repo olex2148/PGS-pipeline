@@ -178,7 +178,7 @@ cat(nrow(df_beta), "variants remaining in munged sumstats. \n")
 
 # Saving the parsed sumstats in the outputfile ---------------------------------------------------------------------------
 head(df_beta)
-saveRDS(df_beta, paste0(output_path, ".rds"))
+saveRDS(df_beta, output_path)
 
 # saveRDS(df_beta, paths$test_parsed) # for testing
 
