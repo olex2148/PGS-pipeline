@@ -67,7 +67,7 @@ def compute_pgs(inputfile):
 
 	base_name = modpath(inputfile, parent=(''), suffix=('_munged.rds', ''))             # Getting the base name from the inputfile 
 	output_path = f'results/{folder_name}/{base_name}/{base_name}'                      # New path with sumstat-specific folder (and filename without suffix)
-  foelgefil = f'{output_path}_foelgefil.csv'
+	foelgefil = f'{output_path}_foelgefil.csv'
 
 	working_dir = paths['work_dir']
 	inputs = {'parsed_sumstats': inputfile}
