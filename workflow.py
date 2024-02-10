@@ -29,7 +29,7 @@ def munge_sumstats(inputfile):
 	# Using modpath() to create name of output file from inputfile - keeps basename,
 	# but gets another path and another suffix
 	munged_sumstats = modpath(inputfile, parent=(f'steps/munged_sumstats/{folder_name}'), suffix=('_munged'))
-	foelgefil = modpath(inputfile, parent=(f'steps/foelgefiler/{folder_name}'), suffix=('_foelgefil.xlsx'))
+	foelgefil = modpath(inputfile, parent=(f'results/foelgefiler/{folder_name}'), suffix=('_foelgefil.xlsx'))
 	
 	# Defining inputs, outputs and ressources
 	inputs = [inputfile]
