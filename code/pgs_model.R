@@ -42,7 +42,7 @@ dosage$map <- dosage$map %>%
   rename("chr" = "CHR", "pos" = "POS", "a0" = "a1", "a1" = "a2")
 
 # Reading in parsed sumstats
-# df_beta = readRDS(test_parsed) # For testing
+# df_beta = readRDS(paths$test_parsed) # For testing
 df_beta = readRDS(munged_sumstats)
 
 # Running LDSC -------------------------------------------------------------------------------------------------------
@@ -57,7 +57,7 @@ h2_init <- ldsc[["h2"]]
 cat("LDSC-estimated heritability on the observed scale:", h2_init, "\n")
 
 # Reading in LD blocks -----------------------------------------------------------------------------------------------
-corr_dir <- paste0("data/corr/", base_name, ".rds")
+corr_dir <- paste0("steps/corr/", base_name, ".rds")
 
 corr <- runonce::save_run({
   for (chr in 1:22) {
