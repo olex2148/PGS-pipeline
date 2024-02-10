@@ -181,7 +181,7 @@ saveRDS(df_beta, paste0(output_path, ".rds"))
 # saveRDS(df_beta, test_parsed) # for testing
 
 # Foelgefil --------------------------------------------------------------------------------------------------------------
-foelgefil <- data.frame(
+foelgefil_df <- data.frame(
   ID = base_name,
   Restrictions = NA,
   Reported_Trait = NA,
@@ -199,6 +199,6 @@ foelgefil <- data.frame(
   M_qc = nrow(df_beta)       # Variants after QC and iPSYCH overlap
 )
 
-write.xlsx(foelgefil,
+write.xlsx(foelgefil_df,
            file = foelgefil,
            rownames = FALSE, overwrite = TRUE)
