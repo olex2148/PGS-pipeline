@@ -60,7 +60,7 @@ def compute_pgs(inputfile, foelgefil):
 	# Name of folder to be created in steps and results
 	folder_name = os.path.split(inputfile)[0].split("/")[-1]
 
-	foelgefil = modpath(inputfile, parent=(f'steps/foelgefiler/{folder_name}'), suffix=('_foelgefil.xlsx'))
+	foelgefil = modpath(inputfile, parent=(f'results/foelgefiler/{folder_name}'), suffix=('_foelgefil.xlsx'))
 	base_name = modpath(inputfile, parent=(''), suffix=('_munged', ''))      # Getting the base name from the inputfile 
 	base_path = f'results/{base_name}/{base_name}'                                    # New path with sumstat-specific folder (and filename without suffix)
 
