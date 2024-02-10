@@ -71,7 +71,7 @@ def compute_pgs(inputfile, foelgefil):
 		f'{output_path}_auto_parameters.rds'
 	]
 	options = {
-		'memory': '10g',
+		'memory': '20g',
 		'walltime': '01:00:00',
 		'cores': '23'
 	}
