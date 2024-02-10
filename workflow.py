@@ -79,7 +79,7 @@ def compute_pgs(inputfile):
 	}
 	options = {
 		'memory': '20g',
-		'walltime': '02:00:00',
+		'walltime': '04:00:00',
 		'cores': '23'
 	}
 
@@ -93,7 +93,9 @@ def compute_pgs(inputfile):
 
 def concat_files(paths):
   folder_name = os.path.split(paths[0])[0].split('/')[-2]
-  output_path = f'results/{folder_name}/{folder_name_foelgefil.csv}'
+  output_path = f'results/{folder_name}/{folder_name}_foelgefil.csv'
+  list_str = ' '.join(paths)
+  command_string = "awk 'FNR == 1 && NR != 1 {next} {print}'"
   
   inputs = {'paths': paths}
   outputs = {'concatenated_foelgefil': output_path}
@@ -104,7 +106,7 @@ def concat_files(paths):
   
   spec = f'''
   
-  cat {paths} > {output_path}
+  {command_string} {list_str} > {output_path}
   
   '''
   
@@ -130,8 +132,7 @@ compute_scores = gwf.map(compute_pgs, parse_sumstats.outputs, name=get_pgs_name)
 
 gwf.target_from_template(
   name='concatenate_foelgefiler',
-  concat_files(
-    paths=**collect(compute_scores.outputs, ['foelgefil']),
-    output_path=f'{folder_name}_foelgefil.csv'
+  template=concat_files(
+    paths=collect(compute_scores.outputs, ['foelgefil'])['foelgefils']
   )
 )
