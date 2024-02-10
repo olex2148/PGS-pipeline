@@ -38,7 +38,7 @@ def munge_sumstats(inputfile):
 	options = {
 		'memory': '20g',
 		'walltime': '00:10:00',
-		'cores': '23'
+		'cores': '2'
 	}
 	
 	# Command to be run in the terminal
@@ -61,18 +61,18 @@ def compute_pgs(inputfile, foelgefil):
 	folder_name = os.path.split(inputfile)[0].split("/")[-1]
 
 	base_name = modpath(inputfile, parent=(''), suffix=('_munged.rds', ''))             # Getting the base name from the inputfile 
-	output_path = f'results/{base_name}/{base_name}'                                    # New path with sumstat-specific folder (and filename without suffix)
+	output_path = f'results/{folder_name}/{base_name}/{base_name}'                      # New path with sumstat-specific folder (and filename without suffix)
 
 	working_dir = paths['work_dir']
-	inputs = [inputfile, foelgefil]
+	inputs = [inputfile]
 	outputs = [
 		f'{output_path}_raw_models.rds', 
 		f'{output_path}_scores.rds', 
 		f'{output_path}_auto_parameters.rds'
 	]
 	options = {
-		'memory': '30g',
-		'walltime': '02:00:00',
+		'memory': '10g',
+		'walltime': '01:00:00',
 		'cores': '23'
 	}
 
