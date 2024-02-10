@@ -191,17 +191,17 @@ saveRDS(list(ldsc = ldsc, ldpred2 = multi_auto, lassosum = beta_lassosum),
         paste0(base_path, "_raw_models.rds"))
 
 # Adding metrics to foelgefil
-foelgefil <- read.xlsx(xlsxFile = foelgefil)
+foelgefil_df <- read.xlsx(xlsxFile = foelgefil)
 
-foelgefil$h2_init <- h2_init
-foelgefil$h2_auto <- quant_h2[1]
-foelgefil$h2_2.5 <- quant_h2[2]
-foelgefil$h2_97.5 <- quant_h2[3]
-foelgefilp2_auto <- quant_p[1]
-foelgefil$p_2.5 <- quant_p[2]
-foelgefil$p_97.5 <- quant_p[3]
+foelgefil_df$h2_init <- h2_init
+foelgefil_df$h2_auto <- quant_h2[1]
+foelgefil_df$h2_2.5 <- quant_h2[2]
+foelgefil_df$h2_97.5 <- quant_h2[3]
+foelgefil_df$p2_auto <- quant_p[1]
+foelgefil_df$p_2.5 <- quant_p[2]
+foelgefil_df$p_97.5 <- quant_p[3]
   
-write.xlsx(foelgefil,
+write.xlsx(foelgefil_df,
            file = foelgefil,
            rownames = FALSE)
   
