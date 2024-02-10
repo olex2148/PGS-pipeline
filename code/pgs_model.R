@@ -8,7 +8,7 @@
 #' (models, scores, figures, foelgefil)
 #' 
 #' @Todo
-#'    - Make general for continuous traits as well
+#'    - Make general for continuous traits
 
 suppressPackageStartupMessages({
   library(bigsnpr)
