@@ -192,7 +192,7 @@ saveRDS(list(ldsc = ldsc, ldpred2 = multi_auto, lassosum = beta_lassosum),
         paste0(base_path, "_raw_models.rds"))
 
 # Adding metrics to foelgefil
-foelgefil_df <- read.xlsx(xlsxFile = foelgefil)
+foelgefil_df <- read.csv(foelgefil, sep = "\t")
 
 foelgefil_df$h2_init <- h2_init
 foelgefil_df$h2_auto <- quant_h2[1]
@@ -202,9 +202,9 @@ foelgefil_df$p2_auto <- quant_p[1]
 foelgefil_df$p_2.5 <- quant_p[2]
 foelgefil_df$p_97.5 <- quant_p[3]
   
-write.xlsx(foelgefil_df,
-           file = foelgefil,
-           rownames = FALSE)
+write.table(foelgefil_df,
+            file = foelgefil, sep = "\t",
+            row.names = FALSE, append = FALSE, quote = FALSE)
   
 # Predicting in iPSYCH ------------------------------------------------------------------------------------------------------
 
