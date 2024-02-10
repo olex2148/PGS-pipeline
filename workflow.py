@@ -72,7 +72,7 @@ def compute_pgs(inputfile, foelgefil):
 	]
 	options = {
 		'memory': '20g',
-		'walltime': '01:00:00',
+		'walltime': '02:00:00',
 		'cores': '23'
 	}
 
