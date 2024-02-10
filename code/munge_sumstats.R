@@ -163,7 +163,7 @@ cat(nrow(df_beta), "variants remaining following QC. \n")
 
 # Restricting to iPSYCH variants -----------------------------------------------------------------------------------------
 # Reading in iPSYCH data
-dosage <- snp_attach(dosage_path) 
+dosage <- snp_attach(paths$dosage_path) 
 dosage$map <- dosage$map %>% 
   rename("chr" = "CHR", "pos" = "POS", "a0" = "a1", "a1" = "a2")
 
