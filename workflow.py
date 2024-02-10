@@ -28,8 +28,9 @@ def munge_sumstats(inputfile):
 	
 	# Using modpath() to create name of output file from inputfile - keeps basename,
 	# but gets another path and another suffix
+	base_name = modpath(inputfile, parent='', suffix='')
 	munged_sumstats = modpath(inputfile, parent=(f'steps/munged_sumstats/{folder_name}'), suffix=('_munged.rds'))
-	foelgefil = modpath(inputfile, parent=(f'results/foelgefiler/{folder_name}'), suffix=('_foelgefil.xlsx'))
+	foelgefil = modpath(inputfile, parent=(f'results/{folder_name}/foelgefiler'), suffix=('_foelgefil.xlsx'))
 	
 	# Defining inputs, outputs and ressources
 	inputs = [inputfile]
@@ -44,8 +45,9 @@ def munge_sumstats(inputfile):
 	# Command to be run in the terminal
 	spec = f'''
 	
-	mkdir -p results/foelgefiler/{folder_name}
  	mkdir -p steps/munged_sumstats/{folder_name}
+ 	mkdir -p results/{folder_name}/foelgefiler
+ 	mkdir -p results/{folder_name}/{base_name}
 
 	Rscript code/munge_sumstats.R {inputfile} {munged_sumstats} {foelgefil}
 	
@@ -77,8 +79,6 @@ def compute_pgs(inputfile, foelgefil):
 	}
 
 	spec = f'''
-
- 	mkdir -p results/{folder_name}/{base_name}
 
 	Rscript code/pgs_model.R {inputfile} {output_path} {foelgefil}
 	
