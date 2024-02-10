@@ -42,7 +42,9 @@ sumstats <- read_sumstats(args[1])
 output_path <- args[2]
 foelgefil <- args[3]
 
-base_name <- basename(output_path)
+base_name <- gsub("_munged.rds", "", basename(output_path))
+path <- unlist(strsplit(dirname(output_path), "/"))
+folder_name <- path[length(path)]
 
 # Standardizing header
 sumstats <- standardise_header(sumstats, mapping_file = sumstatsColHeaders, return_list = FALSE)
@@ -152,7 +154,7 @@ if("frq" %in% colnames(df_beta)){         # If freq exists
          y = "Standard deviations derived from the summary statistics",
          color = "To remove?")
   
-  ggsave(paste0("results/", base_name, "/", base_name, "_QC.jpeg"), p)
+  ggsave(paste0("results/", folder_name, "/", base_name, "/", base_name, "_QC.jpeg"), p)
   
   df_beta <- df_beta[!is_bad, ] 
   
