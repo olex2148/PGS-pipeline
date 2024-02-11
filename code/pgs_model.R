@@ -8,7 +8,7 @@
 #' (models, scores, figures, foelgefil)
 #' 
 #' @Todo
-#'    - Make general for continuous traits
+
 
 suppressPackageStartupMessages({
   library(bigsnpr)
@@ -48,7 +48,7 @@ df_beta = readRDS(munged_sumstats)
 # Running LDSC -------------------------------------------------------------------------------------------------------
 cat("Running LDSC \n")
 
-ld_size <- nrow(info)
+ld_size <- nrow(info) #snp_ldsc won't accept nrow(info) directly
 ldsc <- with(df_beta, snp_ldsc(ld, ld_size = ld_size,
                                chi2 = (beta / beta_se)^2, 
                                sample_size = n_eff,
@@ -57,32 +57,29 @@ h2_init <- ldsc[["h2"]]
 cat("LDSC-estimated heritability on the observed scale:", h2_init, "\n")
 
 # Reading in LD blocks -----------------------------------------------------------------------------------------------
-corr_dir <- paste0("steps/corr/", base_name, ".rds")
+tmp <- tempfile(tmpdir = "steps/corr", pattern = base_name)
 
-corr <- runonce::save_run({
-  for (chr in 1:22) {
-    
-    cat(chr, "..", sep = "")
-    
-    ## indices in df_beta
-    ind.chr <- which(df_beta$chr == chr)
-    
-    ## indices in info
-    ind.chr2 <- df_beta$`_NUM_ID_`[ind.chr]
-    
-    ## indices in corr_chr
-    ind.chr3 <- match(ind.chr2, which(info$chr == chr))
-    
-    corr_chr <- readRDS(paste0(paths$ld_blocks_path, chr, ".rds"))[ind.chr3, ind.chr3]
-    
-    if (chr == 1) {
-      corr <- as_SFBM(corr_chr, corr_dir, compact = TRUE)
-    } else {
-      corr$add_columns(corr_chr, nrow(corr))
-    }
+cat("Reading in LD blocks for chromosome ")
+for (chr in 1:22) {
+  
+  cat(chr, "..", sep = "")
+  
+  ## indices in df_beta
+  ind.chr <- which(df_beta$chr == chr)
+  ## indices in info
+  ind.chr2 <- df_beta$`_NUM_ID_`[ind.chr]
+  ## indices in corr_chr
+  ind.chr3 <- match(ind.chr2, which(info$chr == chr))
+  
+  corr_chr <- readRDS(paste0(paths$ld_blocks_path, chr, ".rds"))[ind.chr3, ind.chr3]
+  
+  if (chr == 1) {
+    corr <- as_SFBM(corr_chr, tmp, compact = TRUE)
+  } else {
+    corr$add_columns(corr_chr, nrow(corr))
   }
-  corr
-}, file = corr_dir)
+}
+cat("\n")
 
 # LDpred2-auto ----------------------------------------------------------------------------------------------------
 set.seed(72)
@@ -188,7 +185,7 @@ best_lassosum <- params %>%
   beta_lassosum[, .]
 
 # Saving the raw models                 
-saveRDS(list(ldsc = ldsc, ldpred2 = multi_auto, lassosum = beta_lassosum),
+saveRDS(list(ldsc = ldsc, ldpred2 = multi_auto, shrinkage_coef = coef_shrink, lassosum = beta_lassosum),
         paste0(base_path, "_raw_models.rds"))
 
 # Adding metrics to foelgefil
@@ -255,7 +252,8 @@ saveRDS(scores, paste0(base_path, "_scores.rds"))
 
 cat("\n Finished computing scores. Models, auto model parameters, foelgefil, and auto + lassosum scores were saved in 4 distinct files in", base_path, "/")
 
-
+# Deleting corr file to save space
+file.remove(paste0(tmp, ".sbk"))
 
 
 
