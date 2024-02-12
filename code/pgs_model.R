@@ -233,12 +233,12 @@ map_pgs2 <- snp_match(map_pgs, dosage$map)
 
 # Compute scores for all individuals in iPSYCH
 pred_auto <- big_prodVec(G,
-                         beta_auto, # Model
+                         beta_auto[map_pgs2[["_NUM_ID_.ss"]]], # Model
                          ind.col = map_pgs2[["_NUM_ID_"]], # Indices in G of snps used in auto
                          ncores = nb_cores())
 
 pred_lassosum <- big_prodVec(G,
-                             best_lassosum,
+                             best_lassosum[map_pgs2[["_NUM_ID_.ss"]]],
                              ind.col = map_pgs2[["_NUM_ID_"]], # Indices in G of snps used in auto
                              ncores = nb_cores())
 
