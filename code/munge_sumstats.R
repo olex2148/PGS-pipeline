@@ -59,7 +59,7 @@ if(ref_genome != "GRCH37") {
 # Renaming to fit snp_match format and filtering away sex chromosomes ---------------------------------------------------
 reformatted <- sumstats %>%
   rename(POS = BP, A0 = A1, A1 = A2, BETA_SE = SE) %>%
-  filter(!CHR %in% c("X", "Y")) %>%
+  filter(CHR %in% 1:22) %>%
   mutate(CHR = as.numeric(CHR))
 
 # Some manual checks -----------------------------------------------------------------------------------------------------
@@ -69,19 +69,20 @@ colnames(reformatted) <- tolower(colnames(reformatted))
 # If reported effect size is odds ratio, MungeSumstats does not convert se, as long as SE exists
 if("or" %in% colnames(reformatted)){
   reformatted$beta = with(reformatted, log(or))
-  reformatted$beta_se = with(reformatted, beta/qnorm(1-p/2)) # beta/z
+  # TODO: Test if SE already there. If so, check that p-values match. Otherwise recompute beta_se.
+  reformatted$beta_se = with(reformatted, abs(beta) / qnorm(pmax(p, .Machine$double.xmin) / 2, lower.tail = FALSE)) # beta/z
 }
 
 # Effective population size ----------------------------------
 
 if(!"n_eff" %in% colnames(reformatted)){
-  if("neff_half" %in% colnames(reformatted)){
-    reformatted$n_eff = with(reformatted, neff_half * 2)
+  reformatted$n_eff = if("neff_half" %in% colnames(reformatted)){
+    with(reformatted, neff_half * 2)
+  } else if("n_cas" %in% colnames(reformatted)){
+    with(reformatted, 4/(1/n_cas + 1/n_con))
   } else {
-    if("n_cas" %in% colnames(reformatted)){
-        reformatted$n_eff = with(reformatted, 4/(1/n_cas + 1/n_con))
-      }
-  }
+    # TODO: What about continuous outcomes? Find N. Maybe read from some text file where you manually store this.
+  }  
 }
 
 # Making sure its in the sumstats 
@@ -91,8 +92,13 @@ assert("No effective population size in parsed sumstats",
 
 # Z score ----------------------------------------------------
 if(!"beta" %in% colnames(reformatted) & "z" %in% colnames(reformatted)){
-    reformatted$beta = with(reformatted, z / sqrt(2*p*(1-p)(n_eff + z^2)))  
-    reformatted$beta_se = with(reformatted, beta/qnorm(1-p/2)) # beta/z
+  # TODO: What I would do: get beta_se from n_eff and freq
+  # 2 * frq (1 - frq) ~ 4 / (n_eff * beta_se^2)
+  # get beta from p-val -> |z| and beta_se and sign(z)
+    #reformatted$beta = with(reformatted, z / sqrt(2*frq*(1-frq)(n_eff + z^2)))  
+    #reformatted$beta_se = with(reformatted, beta/qnorm(1-p/2)) # beta/z
+  # TODO: what if `$frq` is missing? Then using the frequencies from `info` later
+  # and reverse the freq if needed (cf. https://github.com/privefl/paper-infer/blob/main/code/prepare-sumstats/MDD.R#L43-L44)
 }
 
 # Allele frequency ------------------------------------------
@@ -114,6 +120,7 @@ info <- readRDS(runonce::download_file(
   dir = paths$hapmap_path, fname = "map_hm3_plus.rds"))
 
 # Finding sumstats/HapMap3+ overlap
+# TODO: can you find one example where this is needed
 snp_info <- snp_match(reformatted, info, match.min.prop = 0.1)                                              
 
 cat(nrow(snp_info), "variants in overlap with HapMap3+. \n")
@@ -131,6 +138,7 @@ if("info" %in% colnames(df_beta)) {
 }
 
 # Allele frequency -----------------------------------------------
+# TODO: always define this `$frq` -> can get it from `info` as before
 if("frq" %in% colnames(df_beta)){         # If freq exists
   
   sd_af <- with(df_beta, sqrt(2 * frq * (1 - frq)))
@@ -138,17 +146,17 @@ if("frq" %in% colnames(df_beta)){         # If freq exists
   sd_ss2 <- sd_ss / quantile(sd_ss, 0.999) * sqrt(0.5) 
   
   is_bad <- 
-    sd_ss2 < (0.5 * sd_af) |
+    sd_ss2 < (0.7 * sd_af) |
     sd_ss2 > (sd_af + 0.1) |
     sd_ss2 < 0.05 |
     sd_af < 0.05
   
-  p <- ggplot(slice_sample(data.frame(sd_af, sd_ss2, is_bad), n = 50e4)) +
+  p <- ggplot(slice_sample(data.frame(sd_af, sd_ss2, is_bad), n = 100e3)) +
     geom_point(aes(sd_af, sd_ss2, color = is_bad), alpha = 0.5) +
     theme_bigstatsr(0.9) + 
     scale_color_viridis_d(direction = -1) +
     geom_abline(linetype = 2, color = "red", linewidth = 1.5) +
-    labs(x = "Standard deviations in the reference set",
+    labs(x = "Standard deviations derived from the allele frequencies",
          y = "Standard deviations derived from the summary statistics",
          color = "To remove?")
   
