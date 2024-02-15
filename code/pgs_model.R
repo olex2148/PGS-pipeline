@@ -83,6 +83,7 @@ cat("\n")
 
 # LDpred2-auto ----------------------------------------------------------------------------------------------------
 set.seed(72)
+Niter <- 300
 coef_shrink <- 0.9
 
 repeat { 
@@ -90,7 +91,7 @@ repeat {
   
   multi_auto <- snp_ldpred2_auto(
     corr, df_beta, h2_init = h2_init,
-    vec_p_init = seq_log(1e-4, 0.2, length.out = 50), burn_in = 500, num_iter = 500,
+    vec_p_init = seq_log(1e-4, 0.2, length.out = 50), burn_in = 200, num_iter = Niter,
     use_MLE = FALSE, # for power/convergence issues, alpha
     report_step = 20, ncores = nb_cores(), allow_jump_sign = FALSE, shrink_corr = coef_shrink)
   
@@ -102,7 +103,7 @@ repeat {
   
   if(perc_kept >= 0.2) break                       # At least 10 chains should pass QC
   coef_shrink <- coef_shrink - 0.1
-  if(coef_shrink < 0.4) break                     # We won't allow a shrinkage coef smaller than 0.4
+  if(coef_shrink < 0.4) break                     # We won't allow a shrinkage coef smaller than 0.4 / TODO: stop instead
   cat("Rerunning \n")
 }
 
@@ -129,15 +130,15 @@ ggsave(paste0(base_path, "_1st_kept_chain.jpeg"), q)
 
 # Saving auto parameters -------------------------------------------------------------------------------------------
 cat("h2 quantiles \n")
-all_h2 <- sapply(multi_auto[keep], function(auto) tail(auto$path_h2_est, 500))
+all_h2 <- sapply(multi_auto[keep], function(auto) tail(auto$path_h2_est, Niter))
 (quant_h2 <- quantile(all_h2, c(0.5, 0.025, 0.975)))
 
 cat("p quantiles \n")
-all_p <- sapply(multi_auto[keep], function(auto) tail(auto$path_p_est, 500))
+all_p <- sapply(multi_auto[keep], function(auto) tail(auto$path_p_est, Niter))
 (quant_p <- quantile(all_p, c(0.5, 0.025, 0.975)))
 
 cat("Alpha quantiles \n")
-all_alpha <- sapply(multi_auto[keep], function(auto) tail(auto$path_alpha_est, 500))
+all_alpha <- sapply(multi_auto[keep], function(auto) tail(auto$path_alpha_est, Niter))
 quantile(all_alpha, c(0.5, 0.025, 0.975), na.rm = TRUE)
 
 cat("r2 quantiles \n")
@@ -233,21 +234,20 @@ map_pgs2 <- snp_match(map_pgs, dosage$map)
 
 # Compute scores for all individuals in iPSYCH
 pred_auto <- big_prodVec(G,
-                         beta_auto[map_pgs2[["_NUM_ID_.ss"]]], # Model
+                         beta_auto[map_pgs2[["_NUM_ID_.ss"]]] * map_pgs2$beta, # Model
                          ind.col = map_pgs2[["_NUM_ID_"]], # Indices in G of snps used in auto
                          ncores = nb_cores())
 
 pred_lassosum <- big_prodVec(G,
-                             best_lassosum[map_pgs2[["_NUM_ID_.ss"]]],
+                             best_lassosum[map_pgs2[["_NUM_ID_.ss"]]] * map_pgs2$beta,
                              ind.col = map_pgs2[["_NUM_ID_"]], # Indices in G of snps used in auto
                              ncores = nb_cores())
 
 # cbind with family and sample ID and save
-scores <- as.data.frame(cbind(covariates_df$family.ID, 
-                              covariates_df$sample.ID, 
-                              as.numeric(pred_auto),
-                              as.numeric(pred_lassosum)))
-colnames(scores) <- c("family.ID", "sample.ID", "ldpred2_pgs", "lassosum_pgs")
+scores <- data.frame(family.ID = covariates_df$family.ID, 
+                     sample.ID = covariates_df$sample.ID, 
+                     ldpred2_pgs = pred_auto,
+                     lassosum_pgs = pred_lassosum)
 saveRDS(scores, paste0(base_path, "_scores.rds"))
 
 cat("\n Finished computing scores. Models, auto model parameters, foelgefil, and auto + lassosum scores were saved in 4 distinct files in", base_path, "/")
