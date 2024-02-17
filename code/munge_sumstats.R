@@ -49,7 +49,7 @@ base_name <- gsub("_munged.rds", "", basename(output_path))
 
 # Accession ID to find in gwas catalog using gwasrapidd ------------------------------------------------------------------
 accession_id <- str_match(args[1], "accession\\s*(.*?)\\s*_")[,2]
-accession_id <- "GCST90271616"
+
 # Not all requested sumstats had accession ID
 if(!is.na(accession_id)) {
   study_info <- get_studies(study_id = accession_id)
@@ -237,24 +237,32 @@ saveRDS(df_beta, output_path)
 # saveRDS(df_beta, paths$test_parsed) # for testing
 
 # Foelgefil --------------------------------------------------------------------------------------------------------------
-foelgefil_df <- data.frame(
-  ID = base_name,
-  Restrictions = NA,
-  Reported_Trait = NA,
-  PubMed_ID = NA,
-  First_Author = NA,
-  Journal = NA,
-  Title = NA,
-  Publication_Date = NA,
-  N = NA,
-  Ncase = NA,
-  Ncontrol = NA,
-  se = "beta",
-  M_or = nrow(sumstats),     # Variants in original sumstats
-  M_m = nrow(snp_info),      # Overlap with HapMap3+
-  M_qc = nrow(df_beta)       # Variants after QC and iPSYCH overlap
-)
-
+if(!is.na(study_info)) {
+  foelgefil_df <- data.frame(
+    ID = base_name,
+    Accession_ID = accession_id,
+    Reported_Trait = study_info@studies$reported_trait,
+    PubMed_ID = study_info@publications$pubmed_id,
+    First_Author = study_info@publications$author_fullname,
+    Journal = study_info@publications$publication,
+    Title = study_info@publications$title,
+    Publication_Date = study_info@publications$publication_date,
+    N = sum(study_info@ancestries$number_of_individuals),
+    Ncase = sum_cases,
+    Ncontrol = sum_controls,
+    Ancestral_Group = study_info@ancestral_groups$ancestral_group,
+    M_input = nrow(sumstats),     # Variants in original sumstats
+    M_hapmap = nrow(snp_info),    # Overlap with HapMap3+
+    M_qc = nrow(df_beta)          # Variants after QC and iPSYCH overlap
+  )
+} else {
+  foelgefil_df <- data.frame(
+    ID = base_name,
+    M_or = nrow(sumstats),     # Variants in original sumstats
+    M_m = nrow(snp_info),      # Overlap with HapMap3+
+    M_qc = nrow(df_beta)       # Variants after QC and iPSYCH overlap
+  )
+}
 write.table(foelgefil_df,
            file = paste0(res_folder, "/", base_name, "_foelgefil.csv"),
            sep = "\t", row.names = FALSE, append = FALSE, quote = FALSE)
