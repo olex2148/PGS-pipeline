@@ -28,9 +28,11 @@ suppressPackageStartupMessages({
   library(testit)
   library(ggplot2)
   library(rjson)
+  library(gwasrapidd)
+  library(stringr)
 })
 
-# Input and output -----------------------------------------------------------------
+# Input and output -------------------------------------------------------------------------------------------------------
 paths <- fromJSON(file = "data/paths.json")
 load("data/sumstatsColHeaders.rda")
 # sumstats = read_sumstats(paths$test_path) # For testing
@@ -44,7 +46,17 @@ res_folder <- args[3]
 # Removing path and suffix from input str
 base_name <- gsub("_munged.rds", "", basename(output_path))
 
-# Standardizing header
+# Accession ID to find in gwas catalog using gwasrapidd ------------------------------------------------------------------
+accession_id <- str_match(args[1], "accession\\s*(.*?)\\s*_")[,2]
+
+# Not all requested sumstats had accession ID
+if(!is.na(accession_id)) {
+  study_info <- get_studies(study_id = accession_id)
+} else {
+  study_info <- NA
+}
+
+# Standardizing header --------------------------------------------------------------------------------------------------
 sumstats <- standardise_header(sumstats, mapping_file = sumstatsColHeaders, return_list = FALSE)
 
 # Inferring reference genome and performing lift_over if necessary -------------------------------------------------------
