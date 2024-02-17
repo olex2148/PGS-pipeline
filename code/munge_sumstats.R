@@ -34,7 +34,8 @@ suppressPackageStartupMessages({
 
 # Input and output -------------------------------------------------------------------------------------------------------
 paths <- fromJSON(file = "data/paths.json")
-load("data/sumstatsColHeaders.rda")
+load(paths$col_header)
+source(paths$get_n_function)
 # sumstats = read_sumstats(paths$test_path) # For testing
 
 # Command line arguments for this script
@@ -48,13 +49,18 @@ base_name <- gsub("_munged.rds", "", basename(output_path))
 
 # Accession ID to find in gwas catalog using gwasrapidd ------------------------------------------------------------------
 accession_id <- str_match(args[1], "accession\\s*(.*?)\\s*_")[,2]
-
+accession_id <- "GCST90271616"
 # Not all requested sumstats had accession ID
 if(!is.na(accession_id)) {
   study_info <- get_studies(study_id = accession_id)
+  
+  num_inds <- get_n_cas_con(study_info@studies$initial_sample_size)
 } else {
   study_info <- NA
 }
+
+
+
 
 # Standardizing header --------------------------------------------------------------------------------------------------
 sumstats <- standardise_header(sumstats, mapping_file = sumstatsColHeaders, return_list = FALSE)
@@ -99,24 +105,30 @@ if("or" %in% colnames(reformatted)){
 }
 
 # Effective population size ----------------------------------
-
 if(!"n_eff" %in% colnames(reformatted)){
   reformatted$n_eff = if("neff_half" %in% colnames(reformatted)){
     with(reformatted, neff_half * 2)
   } else if("n_cas" %in% colnames(reformatted)){
     with(reformatted, 4/(1/n_cas + 1/n_con))
-  } else {
-    # TODO: What about continuous outcomes? Find N. Maybe read from some text file where you manually store this.
-  }  
+  } else if(!is.na(study_info)){
+    with(num_inds, 4/(1/n_cas + 1/n_con))
+  }
+}
+
+# Total population size for continuous traits ----------------
+if(!"n" %in% colnames(reformatted)) {
+  reformatted$n = if(!is.na(study_info)){
+    sum(study_info@ancestries$number_of_individuals)
+  }
 }
 
 # Making sure its in the sumstats 
 # - otherwise should be added manually
 assert("No effective population size in parsed sumstats",
-       "n_eff" %in% colnames(reformatted))
+       "n_eff" %in% colnames(reformatted) | "n" %in% colnames(reformatted))
 
 # Z score ----------------------------------------------------
-if(!"beta" %in% colnames(reformatted) & "z" %in% colnames(reformatted)){
+# if(!"beta" %in% colnames(reformatted) & "z" %in% colnames(reformatted)){
   # TODO: What I would do: get beta_se from n_eff and freq
   # 2 * frq (1 - frq) ~ 4 / (n_eff * beta_se^2)
   # get beta from p-val -> |z| and beta_se and sign(z)
@@ -124,7 +136,7 @@ if(!"beta" %in% colnames(reformatted) & "z" %in% colnames(reformatted)){
     #reformatted$beta_se = with(reformatted, beta/qnorm(1-p/2)) # beta/z
   # TODO: what if `$frq` is missing? Then using the frequencies from `info` later
   # and reverse the freq if needed (cf. https://github.com/privefl/paper-infer/blob/main/code/prepare-sumstats/MDD.R#L43-L44)
-}
+# }
 
 # Allele frequency ------------------------------------------
 
