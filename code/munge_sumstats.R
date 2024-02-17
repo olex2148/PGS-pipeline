@@ -134,17 +134,6 @@ if(!"n" %in% colnames(snp_info)) {
 assert("No effective population size in parsed sumstats",
        "n_eff" %in% colnames(snp_info) | "n" %in% colnames(snp_info))
 
-# Z score ----------------------------------------------------
-# if(!"beta" %in% colnames(snp_info) & "z" %in% colnames(snp_info)){
-  # TODO: What I would do: get beta_se from n_eff and freq
-  # 2 * frq (1 - frq) ~ 4 / (n_eff * beta_se^2)
-  # get beta from p-val -> |z| and beta_se and sign(z)
-    #snp_info$beta = with(snp_info, z / sqrt(2*frq*(1-frq)(n_eff + z^2)))  
-    #snp_info$beta_se = with(snp_info, beta/qnorm(1-p/2)) # beta/z
-  # TODO: what if `$frq` is missing? Then using the frequencies from `info` later
-  # and reverse the freq if needed (cf. https://github.com/privefl/paper-infer/blob/main/code/prepare-sumstats/MDD.R#L43-L44)
-# }
-
 # Allele frequency ------------------------------------------
 
 # Check if frq columns are on the form frq_a_X and frq_u_X
@@ -170,6 +159,17 @@ if(!"frq" %in% colnames(snp_info)){
     snp_info$frq = snp_info$af_UKBB
   }
 }
+
+# Z score ----------------------------------------------------
+# if(!"beta" %in% colnames(snp_info) & "z" %in% colnames(snp_info)){
+# TODO: What I would do: get beta_se from n_eff and freq
+# 2 * frq (1 - frq) ~ 4 / (n_eff * beta_se^2)
+# get beta from p-val -> |z| and beta_se and sign(z)
+#snp_info$beta = with(snp_info, z / sqrt(2*frq*(1-frq)(n_eff + z^2)))  
+#snp_info$beta_se = with(snp_info, beta/qnorm(1-p/2)) # beta/z
+# TODO: what if `$frq` is missing? Then using the frequencies from `info` later
+# and reverse the freq if needed (cf. https://github.com/privefl/paper-infer/blob/main/code/prepare-sumstats/MDD.R#L43-L44)
+# }
 
 # QC ------------------------------------------------------------------------------------------------------------------
 
