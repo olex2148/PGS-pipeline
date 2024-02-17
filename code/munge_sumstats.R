@@ -7,8 +7,6 @@
 #' 
 #' @Todo
 
-# if (!require("BiocManager", quietly = TRUE))
-#   install.packages("BiocManager")
 # BiocManager::install(version = "3.18") # Version needed for MungeSumstats
 # BiocManager::install("MungeSumstats")
 # 
@@ -71,88 +69,13 @@ if(ref_genome != "GRCH37") {
 }
 
 # Renaming to fit snp_match format and filtering away sex chromosomes ---------------------------------------------------
-reformatted <- sumstats %>%
+sumstats <- sumstats %>%
   rename(POS = BP, A0 = A1, A1 = A2, BETA_SE = SE) %>%
   filter(CHR %in% 1:22) %>%
   mutate(CHR = as.numeric(CHR))
 
-# Some manual checks -----------------------------------------------------------------------------------------------------
-colnames(reformatted) <- tolower(colnames(reformatted))
-
-# Odds ratio -------------------------------------------------
-# If reported effect size is odds ratio
-if("or" %in% colnames(reformatted)){
-  reformatted$beta = with(reformatted, log(or))
-  
-  # If SE already there, check that derived and reported p-values match. Otherwise recompute beta_se.
-  if("beta_se" %in% colnames(reformatted)) {
-    z <- with(reformatted, beta/beta_se)
-    derived_pval <- 2 * (1 - pnorm(abs(z)))
-    pval_cor <- cor(derived_pval, reformatted$p) # Maybe other comparison method? 
-    
-    # If cor is poor, the reported SE is not SE of log(OR), but probably SE of OR. Therefore, compute SE of beta
-    if(pval_cor < 0.9) { # Fitting threshold?
-      reformatted$beta_se = with(reformatted, abs(beta) / qnorm(pmax(p, .Machine$double.xmin) / 2, lower.tail = FALSE)) # beta/z
-    }
-  # if SE not there, estimate with beta/z
-  } else if (!"beta_se" %in% colnames(reformatted)) {
-    reformatted$beta_se = with(reformatted, abs(beta) / qnorm(pmax(p, .Machine$double.xmin) / 2, lower.tail = FALSE)) # beta/z
-  }
-}
-
-# Effective population size ----------------------------------
-if(!"n_eff" %in% colnames(reformatted)){
-  reformatted$n_eff = if("neff_half" %in% colnames(reformatted)){
-    with(reformatted, neff_half * 2)
-  } else if("n_cas" %in% colnames(reformatted)){
-    with(reformatted, 4/(1/n_cas + 1/n_con))
-  } else if(!is.na(study_info)){
-    with(num_inds, 4/(1/n_cas + 1/n_con))
-  }
-}
-
-# Total population size for continuous traits ----------------
-if(!"n" %in% colnames(reformatted)) {
-  reformatted$n = if(!is.na(study_info)){
-    sum(study_info@ancestries$number_of_individuals)
-  }
-}
-
-# Making sure its in the sumstats 
-# - otherwise should be added manually
-assert("No effective population size in parsed sumstats",
-       "n_eff" %in% colnames(reformatted) | "n" %in% colnames(reformatted))
-
-# Z score ----------------------------------------------------
-# if(!"beta" %in% colnames(reformatted) & "z" %in% colnames(reformatted)){
-  # TODO: What I would do: get beta_se from n_eff and freq
-  # 2 * frq (1 - frq) ~ 4 / (n_eff * beta_se^2)
-  # get beta from p-val -> |z| and beta_se and sign(z)
-    #reformatted$beta = with(reformatted, z / sqrt(2*frq*(1-frq)(n_eff + z^2)))  
-    #reformatted$beta_se = with(reformatted, beta/qnorm(1-p/2)) # beta/z
-  # TODO: what if `$frq` is missing? Then using the frequencies from `info` later
-  # and reverse the freq if needed (cf. https://github.com/privefl/paper-infer/blob/main/code/prepare-sumstats/MDD.R#L43-L44)
-# }
-
-# Allele frequency ------------------------------------------
-
-# Check if frq columns are on the form frq_a_X and frq_u_X
-frq_cas_col <- grep("^fr?q_a_", colnames(reformatted))
-frq_con_col <- grep("^fr?q_u_", colnames(reformatted))
-
-col_cas <- as.numeric(str_extract(colnames(reformatted)[frq_cas_col], "\\d+"))
-col_con <- as.numeric(str_extract(colnames(reformatted)[frq_con_col], "\\d+"))
-
-colnames(reformatted)[frq_cas_col] <- "frq_cas"
-colnames(reformatted)[frq_con_col] <- "frq_con"
-
-
-# Calc frq and weight by number of cases and controls
-if(!"frq" %in% colnames(reformatted)){
-  if("frq_cas" %in% colnames(reformatted)) {
-    reformatted$frq = with(reformatted, (frq_cas * col_cas + frq_con * col_con) / (col_cas + col_con))
-  }
-}
+# Making header lower case
+colnames(sumstats) <- tolower(colnames(sumstats))
 
 # Finding Hapmap overlap with sumstats -----------------------------------------------------------------------------------
 # Reading in HapMap3+ 
@@ -161,34 +84,109 @@ info <- readRDS(runonce::download_file(
   dir = paths$hapmap_path, fname = "map_hm3_plus.rds"))
 
 # Finding sumstats/HapMap3+ overlap
-# TODO: can you find one example where this is needed (match.min.prop)
-snp_info <- snp_match(reformatted, info)                                              
+snp_info <- snp_match(sumstats, info, match.min.prop = 0.1)                                              
 
 cat(nrow(snp_info), "variants in overlap with HapMap3+. \n")
 
 
-# If frq and info not in sumstats now, use frq and info scores from Hapmap ----------------------------------------------
-if(!"frq" %in% colnames(df_beta)){         
-  reformatted$frq = with(reformatted, (x + y)/2)
+# Some manual checks -----------------------------------------------------------------------------------------------------
+# Odds ratio -------------------------------------------------
+# If reported effect size is odds ratio
+if("or" %in% colnames(snp_info)){
+  snp_info$beta = with(snp_info, log(or))
+  
+  # If SE already there, check that derived and reported p-values match. Otherwise recompute beta_se.
+  if("beta_se" %in% colnames(snp_info)) {
+    z <- with(snp_info, beta/beta_se)
+    derived_pval <- 2 * (1 - pnorm(abs(z)))
+    pval_cor <- cor(derived_pval, snp_info$p) # Maybe other comparison method? 
+    
+    # If cor is poor, the reported SE is not SE of log(OR), but probably SE of OR. Therefore, compute SE of beta
+    if(pval_cor < 0.9) { # Fitting threshold?
+      snp_info$beta_se = with(snp_info, abs(beta) / qnorm(pmax(p, .Machine$double.xmin) / 2, lower.tail = FALSE)) # beta/z
+    }
+  # if SE not there, estimate with beta/z
+  } else if (!"beta_se" %in% colnames(snp_info)) {
+    snp_info$beta_se = with(snp_info, abs(beta) / qnorm(pmax(p, .Machine$double.xmin) / 2, lower.tail = FALSE)) # beta/z
+  }
 }
 
-if("info" %in% colnames(df_beta)) {
-  reformatted$frq = reformatted$something
+# Effective population size ----------------------------------
+if(!"n_eff" %in% colnames(snp_info)){
+  snp_info$n_eff = if("neff_half" %in% colnames(snp_info)){
+    with(snp_info, neff_half * 2)
+  } else if("n_cas" %in% colnames(snp_info)){
+    with(snp_info, 4/(1/n_cas + 1/n_con))
+  } else if(!is.na(study_info)){
+    with(num_inds, 4/(1/n_cas + 1/n_con))
+  }
+}
+
+# Total population size for continuous traits ----------------
+if(!"n" %in% colnames(snp_info)) {
+  snp_info$n = if(!is.na(study_info)){
+    sum(study_info@ancestries$number_of_individuals)
+  }
+}
+
+# Making sure its in the sumstats 
+# - otherwise should be added manually
+assert("No effective population size in parsed sumstats",
+       "n_eff" %in% colnames(snp_info) | "n" %in% colnames(snp_info))
+
+# Z score ----------------------------------------------------
+# if(!"beta" %in% colnames(snp_info) & "z" %in% colnames(snp_info)){
+  # TODO: What I would do: get beta_se from n_eff and freq
+  # 2 * frq (1 - frq) ~ 4 / (n_eff * beta_se^2)
+  # get beta from p-val -> |z| and beta_se and sign(z)
+    #snp_info$beta = with(snp_info, z / sqrt(2*frq*(1-frq)(n_eff + z^2)))  
+    #snp_info$beta_se = with(snp_info, beta/qnorm(1-p/2)) # beta/z
+  # TODO: what if `$frq` is missing? Then using the frequencies from `info` later
+  # and reverse the freq if needed (cf. https://github.com/privefl/paper-infer/blob/main/code/prepare-sumstats/MDD.R#L43-L44)
+# }
+
+# Allele frequency ------------------------------------------
+
+# Check if frq columns are on the form frq_a_X and frq_u_X
+frq_cas_col <- grep("^fr?q_a_", colnames(snp_info), value = TRUE)
+frq_con_col <- grep("^fr?q_u_", colnames(snp_info), value = TRUE)
+
+col_cas <- as.numeric(str_extract(frq_cas_col, "\\d+"))
+col_con <- as.numeric(str_extract(frq_con_col, "\\d+"))
+
+colnames(snp_info)[frq_cas_col] <- "frq_cas"
+colnames(snp_info)[frq_con_col] <- "frq_con"
+
+
+# Calc frq and weight by number of cases and controls
+if(!"frq" %in% colnames(snp_info)){
+  if("frq_cas" %in% colnames(snp_info)) {
+    if(!is.na(study_info)) {
+      snp_info$frq = with(snp_info, (frq_cas * num_inds$n_cas + frq_con * num_inds$n_con) / (num_inds$n_cas + num_inds$n_con))
+    } else if(length(frq_cas_col) > 0) {
+      snp_info$frq = with(snp_info, (frq_cas * col_cas + frq_con * col_con) / (col_cas + col_con))
+    }
+  } else { # If frq still not in sumstats use af_UKBB instead
+    snp_info$frq = snp_info$af_UKBB
+  }
 }
 
 # QC ------------------------------------------------------------------------------------------------------------------
 
 df_beta <- snp_info %>% 
-  # Beta, beta_se, n_eff, info  -----------------------------------
+  # Beta, beta_se, n_eff  -----------------------------------
   filter(beta != 0,
          beta_se > 0,
-         n_eff > (0.7 * max(n_eff)),
-         info > 0.7
+         n_eff > (0.7 * max(n_eff))
          ) %>% 
   # sd of af compared to sd of ss
   mutate(sd_af = sqrt(2 * frq * (1 - frq)),
          sd_ss = 2 / sqrt(n_eff * beta_se^2 + beta^2),
          sd_ss2 = sd_ss/quantile(sd_ss, 0.999) * sqrt(0.5))
+
+if("info" %in% colnames(df_beta)) {
+  df_beta <- filter(df_beta, info > 0.7)
+}
 
 # TODO: Incorporate
 # df_beta$freq2 <- ifelse(df_beta$beta * sumstats$beta[df_beta$`_NUM_ID_.ss`] < 0,
@@ -199,7 +197,7 @@ df_beta$is_bad <- with(df_beta,
                        sd_ss2 < 0.1 | sd_af < 0.05)
 
 p <- qplot(sd_af, sd_ss2, color = is_bad, alpha = I(0.5),
-           data = slice_sample(info_snp2, n = 50e3)) +
+           data = slice_sample(df_beta, n = 50e3)) +
            theme_bigstatsr() +
            coord_equal() +
            scale_color_viridis_d(direction = -1) +
@@ -248,19 +246,19 @@ if(!is.na(study_info)) {
     Title = study_info@publications$title,
     Publication_Date = study_info@publications$publication_date,
     N = sum(study_info@ancestries$number_of_individuals),
-    Ncase = sum_cases,
-    Ncontrol = sum_controls,
+    N_Cases = num_inds$n_cas,
+    N_Controls = num_inds$n_con,
     Ancestral_Group = study_info@ancestral_groups$ancestral_group,
-    M_input = nrow(sumstats),     # Variants in original sumstats
-    M_hapmap = nrow(snp_info),    # Overlap with HapMap3+
-    M_qc = nrow(df_beta)          # Variants after QC and iPSYCH overlap
+    M_Input = nrow(sumstats),     # Variants in original sumstats
+    M_HapMap = nrow(snp_info),    # Overlap with HapMap3+
+    M_QC = nrow(df_beta)          # Variants after QC and iPSYCH overlap
   )
 } else {
   foelgefil_df <- data.frame(
     ID = base_name,
-    M_or = nrow(sumstats),     # Variants in original sumstats
-    M_m = nrow(snp_info),      # Overlap with HapMap3+
-    M_qc = nrow(df_beta)       # Variants after QC and iPSYCH overlap
+    M_Input = nrow(sumstats),     # Variants in original sumstats
+    M_HapMap = nrow(snp_info),    # Overlap with HapMap3+
+    M_QC = nrow(df_beta)          # Variants after QC and iPSYCH overlap
   )
 }
 write.table(foelgefil_df,
