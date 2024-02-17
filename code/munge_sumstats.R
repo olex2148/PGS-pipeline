@@ -53,14 +53,10 @@ accession_id <- str_match(args[1], "accession\\s*(.*?)\\s*_")[,2]
 # Not all requested sumstats had accession ID
 if(!is.na(accession_id)) {
   study_info <- get_studies(study_id = accession_id)
-  
-  num_inds <- get_n_cas_con(study_info@studies$initial_sample_size)
+  num_inds <- get_n_cas_con(study_info@studies$initial_sample_size) # Get number of cases and controls from sample size string
 } else {
   study_info <- NA
 }
-
-
-
 
 # Standardizing header --------------------------------------------------------------------------------------------------
 sumstats <- standardise_header(sumstats, mapping_file = sumstatsColHeaders, return_list = FALSE)
@@ -141,16 +137,20 @@ assert("No effective population size in parsed sumstats",
 # Allele frequency ------------------------------------------
 
 # Check if frq columns are on the form frq_a_X and frq_u_X
-colnames(reformatted)[grep("^fr?q_a_", colnames(reformatted))] <- "frq_cas"
-colnames(reformatted)[grep("^fr?q_u_", colnames(reformatted))] <- "frq_con"
+frq_cas_col <- grep("^fr?q_a_", colnames(reformatted))
+frq_con_col <- grep("^fr?q_u_", colnames(reformatted))
 
-cases <- 
-controls <- 
+col_cas <- as.numeric(str_extract(colnames(reformatted)[frq_cas_col], "\\d+"))
+col_con <- as.numeric(str_extract(colnames(reformatted)[frq_con_col], "\\d+"))
 
-# Calc frq and weighting by number of cases and controls
+colnames(reformatted)[frq_cas_col] <- "frq_cas"
+colnames(reformatted)[frq_con_col] <- "frq_con"
+
+
+# Calc frq and weight by number of cases and controls
 if(!"frq" %in% colnames(reformatted)){
   if("frq_cas" %in% colnames(reformatted)) {
-    reformatted$frq = with(reformatted, (freq1 * cases + freq2 * controls) / (cases + controls))
+    reformatted$frq = with(reformatted, (frq_cas * col_cas + frq_con * col_con) / (col_cas + col_con))
   }
 }
 
