@@ -144,9 +144,13 @@ assert("No effective population size in parsed sumstats",
 colnames(reformatted)[grep("^fr?q_a_", colnames(reformatted))] <- "frq_cas"
 colnames(reformatted)[grep("^fr?q_u_", colnames(reformatted))] <- "frq_con"
 
+cases <- 
+controls <- 
+
+# Calc frq and weighting by number of cases and controls
 if(!"frq" %in% colnames(reformatted)){
   if("frq_cas" %in% colnames(reformatted)) {
-    reformatted$frq = with(reformatted, (frq_cas + frq_con)/2)
+    reformatted$frq = with(reformatted, (freq1 * cases + freq2 * controls) / (cases + controls))
   }
 }
 
@@ -157,53 +161,58 @@ info <- readRDS(runonce::download_file(
   dir = paths$hapmap_path, fname = "map_hm3_plus.rds"))
 
 # Finding sumstats/HapMap3+ overlap
-# TODO: can you find one example where this is needed
-snp_info <- snp_match(reformatted, info, match.min.prop = 0.1)                                              
+# TODO: can you find one example where this is needed (match.min.prop)
+snp_info <- snp_match(reformatted, info)                                              
 
 cat(nrow(snp_info), "variants in overlap with HapMap3+. \n")
 
+
+# If frq and info not in sumstats now, use frq and info scores from Hapmap ----------------------------------------------
+if(!"frq" %in% colnames(df_beta)){         
+  reformatted$frq = with(reformatted, (x + y)/2)
+}
+
+if("info" %in% colnames(df_beta)) {
+  reformatted$frq = reformatted$something
+}
+
 # QC ------------------------------------------------------------------------------------------------------------------
 
-# Beta, beta_se, and n_eff  ---------------------------------------
 df_beta <- snp_info %>% 
-  filter(beta != 0 & beta_se > 0 & n_eff > (0.7 * max(n_eff)))
+  # Beta, beta_se, n_eff, info  -----------------------------------
+  filter(beta != 0,
+         beta_se > 0,
+         n_eff > (0.7 * max(n_eff)),
+         info > 0.7
+         ) %>% 
+  # sd of af compared to sd of ss
+  mutate(sd_af = sqrt(2 * frq * (1 - frq)),
+         sd_ss = 2 / sqrt(n_eff * beta_se^2 + beta^2),
+         sd_ss2 = sd_ss/quantile(sd_ss, 0.999) * sqrt(0.5))
 
-# INFO score ----------------------------------------------------
-if("info" %in% colnames(df_beta)) {
-  df_beta <- df_beta %>%
-    filter(info > 0.7)
-}
+# TODO: Incorporate
+# df_beta$freq2 <- ifelse(df_beta$beta * sumstats$beta[df_beta$`_NUM_ID_.ss`] < 0,
+#                           1 - df_beta$freq, df_beta$freq)
 
-# Allele frequency -----------------------------------------------
-# TODO: always define this `$frq` -> can get it from `info` as before
-if("frq" %in% colnames(df_beta)){         # If freq exists
+df_beta$is_bad <- with(df_beta,
+                       sd_ss2 < (0.7 * sd_af) | sd_ss > (sd_af + 0.1) |
+                       sd_ss2 < 0.1 | sd_af < 0.05)
+
+p <- qplot(sd_af, sd_ss2, color = is_bad, alpha = I(0.5),
+           data = slice_sample(info_snp2, n = 50e3)) +
+           theme_bigstatsr() +
+           coord_equal() +
+           scale_color_viridis_d(direction = -1) +
+           geom_abline(linetype = 2, color = "red") +
+           labs(x = "Standard deviations derived from the allele frequencies",
+                y = "Standard deviations derived from the summary statistics",
+                color = "To remove?")
+
+ggsave(paste0(res_folder, "/", base_name, "_QC.jpeg"), p)
+
+df_beta <- filter(df_beta, !is_bad)
   
-  sd_af <- with(df_beta, sqrt(2 * frq * (1 - frq)))
-  sd_ss <- with(df_beta, 2 / sqrt(n_eff * beta_se^2 + beta^2))
-  sd_ss2 <- sd_ss / quantile(sd_ss, 0.999) * sqrt(0.5) 
-  
-  is_bad <- 
-    sd_ss2 < (0.7 * sd_af) |
-    sd_ss2 > (sd_af + 0.1) |
-    sd_ss2 < 0.05 |
-    sd_af < 0.05
-  
-  p <- ggplot(slice_sample(data.frame(sd_af, sd_ss2, is_bad), n = 100e3)) +
-    geom_point(aes(sd_af, sd_ss2, color = is_bad), alpha = 0.5) +
-    theme_bigstatsr(0.9) + 
-    scale_color_viridis_d(direction = -1) +
-    geom_abline(linetype = 2, color = "red", linewidth = 1.5) +
-    labs(x = "Standard deviations derived from the allele frequencies",
-         y = "Standard deviations derived from the summary statistics",
-         color = "To remove?")
-  
-  ggsave(paste0(res_folder, "/", base_name, "_QC.jpeg"), p)
-  
-  df_beta <- df_beta[!is_bad, ] 
-  
-} else {
-  cat("No allele frequencies available in summary statistics. QC step not performed. \n")
-}
+
 cat(nrow(df_beta), "variants remaining following QC. \n")
 
 # Restricting to iPSYCH variants -----------------------------------------------------------------------------------------
