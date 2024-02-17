@@ -78,11 +78,24 @@ reformatted <- sumstats %>%
 colnames(reformatted) <- tolower(colnames(reformatted))
 
 # Odds ratio -------------------------------------------------
-# If reported effect size is odds ratio, MungeSumstats does not convert se, as long as SE exists
+# If reported effect size is odds ratio
 if("or" %in% colnames(reformatted)){
   reformatted$beta = with(reformatted, log(or))
-  # TODO: Test if SE already there. If so, check that p-values match. Otherwise recompute beta_se.
-  reformatted$beta_se = with(reformatted, abs(beta) / qnorm(pmax(p, .Machine$double.xmin) / 2, lower.tail = FALSE)) # beta/z
+  
+  # If SE already there, check that derived and reported p-values match. Otherwise recompute beta_se.
+  if("beta_se" %in% colnames(reformatted)) {
+    z <- with(reformatted, beta/beta_se)
+    derived_pval <- 2 * (1 - pnorm(abs(z)))
+    pval_cor <- cor(derived_pval, reformatted$p) # Maybe other comparison method? 
+    
+    # If cor is poor, the reported SE is not SE of log(OR), but probably SE of OR. Therefore, compute SE of beta
+    if(pval_cor < 0.9) { # Fitting threshold?
+      reformatted$beta_se = with(reformatted, abs(beta) / qnorm(pmax(p, .Machine$double.xmin) / 2, lower.tail = FALSE)) # beta/z
+    }
+  # if SE not there, estimate with beta/z
+  } else if (!"beta_se" %in% colnames(reformatted)) {
+    reformatted$beta_se = with(reformatted, abs(beta) / qnorm(pmax(p, .Machine$double.xmin) / 2, lower.tail = FALSE)) # beta/z
+  }
 }
 
 # Effective population size ----------------------------------
