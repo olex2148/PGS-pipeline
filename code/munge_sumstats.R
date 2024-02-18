@@ -85,23 +85,23 @@ if("hetpva" %in% colnames(sumstats)){sumstats <- select(sumstats, !hetpva)}
 
 # Odds ratio -------------------------------------------------------------------------------------------------------------
 # If reported effect size is odds ratio
-if("or" %in% colnames(snp_info)){
-  snp_info$beta = with(snp_info, log(or))
-  snp_info <- select(snp_info, !or)
+if("or" %in% colnames(sumstats)){
+  sumstats$beta = with(sumstats, log(or))
+  sumstats <- select(sumstats, !or)
   
   # If SE already there, check that derived and reported p-values match. Otherwise recompute beta_se.
-  if("beta_se" %in% colnames(snp_info)) {
-    z <- with(snp_info, beta/beta_se)
+  if("beta_se" %in% colnames(sumstats)) {
+    z <- with(sumstats, beta/beta_se)
     derived_pval <- 2 * (1 - pnorm(abs(z)))
-    pval_cor <- cor(derived_pval, snp_info$p) # Maybe other comparison method? 
+    pval_cor <- cor(derived_pval, sumstats$p) # Maybe other comparison method? 
     
     # If cor is poor, the reported SE is not SE of log(OR), but probably SE of OR. Therefore, compute SE of beta
     if(pval_cor < 0.9) { # Fitting threshold?
-      snp_info$beta_se = with(snp_info, abs(beta) / qnorm(pmax(p, .Machine$double.xmin) / 2, lower.tail = FALSE)) # beta/z
+      sumstats$beta_se = with(sumstats, abs(beta) / qnorm(pmax(p, .Machine$double.xmin) / 2, lower.tail = FALSE)) # beta/z
     }
   # if SE not there, estimate with beta/z
-  } else if (!"beta_se" %in% colnames(snp_info)) {
-    snp_info$beta_se = with(snp_info, abs(beta) / qnorm(pmax(p, .Machine$double.xmin) / 2, lower.tail = FALSE)) # beta/z
+  } else if (!"beta_se" %in% colnames(sumstats)) {
+    sumstats$beta_se = with(sumstats, abs(beta) / qnorm(pmax(p, .Machine$double.xmin) / 2, lower.tail = FALSE)) # beta/z
   }
 }
 
