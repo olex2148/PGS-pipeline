@@ -212,12 +212,10 @@ assert("No effective population size in parsed sumstats",
 # get beta from p-val -> |z| and beta_se and sign(z)
 #snp_info$beta = with(snp_info, z / sqrt(2*frq*(1-frq)(n_eff + z^2)))  
 #snp_info$beta_se = with(snp_info, beta/qnorm(1-p/2)) # beta/z
-# TODO: what if `$frq` is missing? Then using the frequencies from `info` later
-# and reverse the freq if needed (cf. https://github.com/privefl/paper-infer/blob/main/code/prepare-sumstats/MDD.R#L43-L44)
-# }
+
 
 # QC -------------------------------------------------------------------------------------------------------------------------------------
-if("n_eff" %in% colnames(df_beta)) {
+if("n_eff" %in% colnames(snp_info)) {
   df_beta <- snp_info %>% 
     filter(beta != 0, beta_se > 0,
            n_eff > (0.7 * max(n_eff))) %>% 
