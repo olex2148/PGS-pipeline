@@ -85,7 +85,7 @@ if(all(c("a1", "a2") %in% colnames(sumstats))){  sumstats <- rename(sumstats, a0
 if("bp" %in% colnames(sumstats)){                sumstats <- rename(sumstats, pos = bp)}
 if("snp" %in% colnames(sumstats)){               sumstats <- rename(sumstats, rsid = snp)}
 if("se" %in% colnames(sumstats)){                sumstats <- rename(sumstats, beta_se = se)}
-if("chr" %in% colnames(sumstats)){               sumstats <- filter(sumstats, chr %in% 1:22) %>%  mutate(chr = as.numeric(chr))}
+if("chr" %in% colnames(sumstats)){               sumstats <- sumstats %>% filter(chr %in% 1:22) %>%  mutate(chr = as.numeric(chr))}
 
 # Removing some redundant cols
 if("direction" %in% colnames(sumstats)){         sumstats <- select(sumstats, !direction)}
@@ -127,14 +127,8 @@ sumstats$a0 <- toupper(sumstats$a0)
 sumstats$a1 <- toupper(sumstats$a1)
 
 # Finding sumstats/HapMap3+ overlap
-if(all(c("chr", "pos") %in% colnames(sumstats))) {
-  snp_info <- snp_match(sumstats, info, match.min.prop = 0.1) %>%
-    select(-c(pos_hg18, pos_hg38))
-} else { # Some files have only SNP/rsid - attempt to snp_match without pos then
-  snp_info <- snp_match(sumstats, info, match.min.prop = 0.1, join_by_pos = FALSE) %>%
-    select(-c(pos_hg18, pos_hg38))
-}
-
+snp_info <- snp_match(sumstats, info, match.min.prop = 0.1) %>%
+  select(-c(pos_hg18, pos_hg38))
 
 cat(nrow(snp_info), "variants in overlap with HapMap3+. \n")
 
