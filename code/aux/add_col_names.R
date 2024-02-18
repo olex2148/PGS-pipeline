@@ -4,8 +4,8 @@
 #' # shown is an example of adding columns for Standard Error (SE)
 
 data("sumstatsColHeaders")
-new_cols <- data.frame("Uncorrected"=c("NCAS",   "NCON", "FCAS",   "EAF_CASES", "FCON", "EAF_CONTROLS", "NEFFDIV2", "IMPINFO", "INFOSCORE", "DIRE"),
-                        "Corrected"= c("N_CAS", "N_CON", "FRQ_CAS", "FRQ_CAS", "FRQ_CON", "FRQ_CON",     "NEFF_HALF", "INFO",  "INFO",   "DIRECTION"))
+new_cols <- data.frame("Uncorrected"=c("NCAS",   "NCON", "FCAS",   "EAF_CASES", "FCON", "EAF_CONTROLS", "NEFFDIV2", "IMPINFO", "INFOSCORE", "DIRE", "ALT_ALLELE"),
+                        "Corrected"= c("N_CAS", "N_CON", "FRQ_CAS", "FRQ_CAS", "FRQ_CON", "FRQ_CON",     "NEFF_HALF", "INFO",  "INFO",   "DIRECTION", "A1"))
 sumstatsColHeaders <- rbind(sumstatsColHeaders,new_cols)
 
 #Once additions are made, order & save the new mapping dataset

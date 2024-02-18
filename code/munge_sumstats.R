@@ -81,7 +81,7 @@ if(all(c("SNP", "CHR", "BP") %in% colnames(sumstats))) {  # MungeSumstats needs 
 # Renaming to fit snp_match format and filtering away sex chromosomes ---------------------------------------------------
 colnames(sumstats) <- tolower(colnames(sumstats))
 
-if(all(c("a1", "a2") %in% colnames(sumstats))){  sumstats <- rename(sumstats, a0 = a1, a1 = a2)}
+if(all(c("a1", "a2") %in% colnames(sumstats))){  sumstats <- rename(sumstats, a0 = a2, a1 = a1)}
 if("bp" %in% colnames(sumstats)){                sumstats <- rename(sumstats, pos = bp)}
 if("snp" %in% colnames(sumstats)){               sumstats <- rename(sumstats, rsid = snp)}
 if("se" %in% colnames(sumstats)){                sumstats <- rename(sumstats, beta_se = se)}
@@ -114,6 +114,10 @@ if("or" %in% colnames(sumstats)){
   } else if (!"beta_se" %in% colnames(sumstats)) {
     sumstats$beta_se = with(sumstats, abs(beta) / qnorm(pmax(p, .Machine$double.xmin) / 2, lower.tail = FALSE)) # beta/z
   }
+}
+# If effect size is already beta, but beta_se is not there
+if(!"beta_se" %in% colnames(sumstats)) {
+  sumstats$beta_se = with(sumstats, abs(beta) / qnorm(pmax(p, .Machine$double.xmin) / 2, lower.tail = FALSE)) # beta/z
 }
 
 # Finding Hapmap overlap with sumstats -----------------------------------------------------------------------------------
