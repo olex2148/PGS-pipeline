@@ -83,21 +83,7 @@ if("hetisqt" %in% colnames(sumstats)){sumstats <- select(sumstats, !hetisqt)}
 if("hetdf" %in% colnames(sumstats)){sumstats <- select(sumstats, !hetdf)}
 if("hetpva" %in% colnames(sumstats)){sumstats <- select(sumstats, !hetpva)}
 
-# Finding Hapmap overlap with sumstats -----------------------------------------------------------------------------------
-# Reading in HapMap3+ 
-info <- readRDS(runonce::download_file(
-  "https://figshare.com/ndownloader/files/37802721",
-  dir = paths$hapmap_path, fname = "map_hm3_plus.rds"))
-
-# Finding sumstats/HapMap3+ overlap
-snp_info <- snp_match(sumstats, info, match.min.prop = 0.1) %>%
-  select(-c(pos_hg18, pos_hg38))
-
-cat(nrow(snp_info), "variants in overlap with HapMap3+. \n")
-
-
-# Some manual checks -----------------------------------------------------------------------------------------------------
-# Odds ratio -------------------------------------------------
+# Odds ratio -------------------------------------------------------------------------------------------------------------
 # If reported effect size is odds ratio
 if("or" %in% colnames(snp_info)){
   snp_info$beta = with(snp_info, log(or))
@@ -119,7 +105,19 @@ if("or" %in% colnames(snp_info)){
   }
 }
 
-# Allele frequency ------------------------------------------
+# Finding Hapmap overlap with sumstats -----------------------------------------------------------------------------------
+# Reading in HapMap3+ 
+info <- readRDS(runonce::download_file(
+  "https://figshare.com/ndownloader/files/37802721",
+  dir = paths$hapmap_path, fname = "map_hm3_plus.rds"))
+
+# Finding sumstats/HapMap3+ overlap
+snp_info <- snp_match(sumstats, info, match.min.prop = 0.1) %>%
+  select(-c(pos_hg18, pos_hg38))
+
+cat(nrow(snp_info), "variants in overlap with HapMap3+. \n")
+
+# Allele frequency -------------------------------------------------------------------------------------------------------
 
 # Check if frq columns are on the form frq_a_X and frq_u_X (PGC format)
 frq_cas_col <- grep("^fr?q_a_", colnames(snp_info))
@@ -160,7 +158,7 @@ if(!"frq" %in% colnames(snp_info)){
 }
 snp_info <- select(snp_info, !af_UKBB)
 
-# Effective population size ----------------------------------
+# Effective population size ------------------------------------------------------------------------------------------------------
 if(!"n_eff" %in% colnames(snp_info)){
 
   # Prioritizing estimation from neff_half
@@ -188,7 +186,7 @@ if(!"n_eff" %in% colnames(snp_info)){
   }
 }
 
-# Total population size for continuous traits ----------------
+# Total population size for continuous traits ------------------------------------------------------------------------------------------
 if(!"n" %in% colnames(snp_info)) {
   snp_info$n = if(!is.na(study_info)){
     sum(study_info@ancestries$number_of_individuals)
@@ -200,7 +198,7 @@ if(!"n" %in% colnames(snp_info)) {
 assert("No effective population size in parsed sumstats",
        "n_eff" %in% colnames(snp_info) | "n" %in% colnames(snp_info))
 
-# Z score ----------------------------------------------------
+# Z score -------------------------------------------------------------------------------------------------------------------------------
 # if(!"beta" %in% colnames(snp_info) & "z" %in% colnames(snp_info)){
 # TODO: What I would do: get beta_se from n_eff and freq
 # 2 * frq (1 - frq) ~ 4 / (n_eff * beta_se^2)
@@ -211,7 +209,7 @@ assert("No effective population size in parsed sumstats",
 # and reverse the freq if needed (cf. https://github.com/privefl/paper-infer/blob/main/code/prepare-sumstats/MDD.R#L43-L44)
 # }
 
-# QC ------------------------------------------------------------------------------------------------------------------
+# QC -------------------------------------------------------------------------------------------------------------------------------------
 
 df_beta <- snp_info %>% 
   # Beta, beta_se, n_eff  -----------------------------------
