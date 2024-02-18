@@ -61,7 +61,7 @@ sumstats <- standardise_header(sumstats, mapping_file = sumstatsColHeaders, retu
 head(sumstats)
 
 # Inferring reference genome and performing lift_over if necessary -------------------------------------------------------
-if(c("SNP", "CHR", "BP") %in% colnames(sumstats)) {  # MungeSumstats needs these three cols to infer ref
+if(all(c("SNP", "CHR", "BP") %in% colnames(sumstats))) {  # MungeSumstats needs these three cols to infer ref
   ref_genome <- get_genome_builds(sumstats_list = list(ss1 = sumstats))$ss1
   
   if(ref_genome != "GRCH37") {
@@ -75,9 +75,12 @@ if(c("SNP", "CHR", "BP") %in% colnames(sumstats)) {  # MungeSumstats needs these
 colnames(sumstats) <- tolower(colnames(sumstats))
 
 sumstats <- sumstats %>%
-  rename(pos = bp, a0 = a1, a1 = a2, beta_se = se, rsid = snp) %>%
+  rename(a0 = a1, a1 = a2, beta_se = se) %>%
   filter(chr %in% 1:22) %>%
   mutate(chr = as.numeric(chr))
+
+if("bp" %in% colnames(sumstats)){rename(sumstats, pos = bp)}
+if("snp" %in% colnames(sumstats)){rename(sumstats, rsid = snp)}
 
 # Removing some redundant cols
 if("direction" %in% colnames(sumstats)){sumstats <- select(sumstats, !direction)}
