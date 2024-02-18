@@ -61,12 +61,14 @@ sumstats <- standardise_header(sumstats, mapping_file = sumstatsColHeaders, retu
 head(sumstats)
 
 # Inferring reference genome and performing lift_over if necessary -------------------------------------------------------
-ref_genome <- get_genome_builds(sumstats_list = list(ss1 = sumstats))$ss1
-
-if(ref_genome != "GRCH37") {
-  sumstats <- liftover(sumstats_dt = sumstats,
-                       ref_genome = ref_genome,
-                       convert_ref_genome = "GRCh37")
+if(c("SNP", "CHR", "BP") %in% colnames(sumstats)) {  # MungeSumstats needs these three cols to infer ref
+  ref_genome <- get_genome_builds(sumstats_list = list(ss1 = sumstats))$ss1
+  
+  if(ref_genome != "GRCH37") {
+    sumstats <- liftover(sumstats_dt = sumstats,
+                         ref_genome = ref_genome,
+                         convert_ref_genome = "GRCh37")
+  }
 }
 
 # Renaming to fit snp_match format and filtering away sex chromosomes ---------------------------------------------------
