@@ -61,8 +61,12 @@ sumstats <- standardise_header(sumstats, mapping_file = sumstatsColHeaders, retu
 head(sumstats)
 
 # Inferring reference genome and performing lift_over if necessary -------------------------------------------------------
-# I SNP col is chr:pos
-if(any(grepl(":", sumstats$SNP))) {sumstats[, c("chr", "pos")] := tstrsplit(SNP, fixed = TRUE)}
+# If SNP col is chr:pos
+if(any(grepl(":", sumstats$SNP))) { 
+  sumstats <- tidyr::separate(sumstats,                                        # SLOW
+                              col = SNP, into = c("CHR", "BP"), sep = ":", 
+                              convert = TRUE, extra = "drop")                  # If the col contains more than one : - e.g. chr:pos:a0:a1, :a0:a1 is dropped
+}
 
 if(all(c("SNP", "CHR", "BP") %in% colnames(sumstats))) {  # MungeSumstats needs these three cols to infer ref
   ref_genome <- get_genome_builds(sumstats_list = list(ss1 = sumstats))$ss1
