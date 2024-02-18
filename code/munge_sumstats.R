@@ -124,7 +124,7 @@ frq_cas_col <- grep("^fr?q_a_", colnames(snp_info))
 frq_con_col <- grep("^fr?q_u_", colnames(snp_info))
 
 col_cas <- as.numeric(str_extract(colnames(snp_info)[frq_cas_col], "\\d+"))
-col_con <- as.numeric(str_extract(colnames(snp_info)[frq_cas_col], "\\d+"))
+col_con <- as.numeric(str_extract(colnames(snp_info)[frq_con_col], "\\d+"))
 
 colnames(snp_info)[frq_cas_col] <- "frq_cas"
 colnames(snp_info)[frq_con_col] <- "frq_con"
