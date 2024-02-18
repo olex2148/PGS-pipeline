@@ -61,6 +61,9 @@ sumstats <- standardise_header(sumstats, mapping_file = sumstatsColHeaders, retu
 head(sumstats)
 
 # Inferring reference genome and performing lift_over if necessary -------------------------------------------------------
+# I SNP col is chr:pos
+if(any(grepl(":", sumstats$SNP))) {sumstats[, c("chr", "pos")] := tstrsplit(SNP, fixed = TRUE)}
+
 if(all(c("SNP", "CHR", "BP") %in% colnames(sumstats))) {  # MungeSumstats needs these three cols to infer ref
   ref_genome <- get_genome_builds(sumstats_list = list(ss1 = sumstats))$ss1
   
