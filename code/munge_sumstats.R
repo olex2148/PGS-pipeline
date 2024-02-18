@@ -79,6 +79,9 @@ sumstats <- sumstats %>%
 # Removing some redundant cols
 if("dire" %in% colnames(sumstats)){sumstats <- select(sumstats, !dire)}
 if("ngt" %in% colnames(sumstats)){sumstats <- select(sumstats, !ngt)}
+if("hetisqt" %in% colnames(sumstats)){sumstats <- select(sumstats, !hetisqt)}
+if("hetdf" %in% colnames(sumstats)){sumstats <- select(sumstats, !hetdf)}
+if("hetpva" %in% colnames(sumstats)){sumstats <- select(sumstats, !hetpva)}
 
 # Finding Hapmap overlap with sumstats -----------------------------------------------------------------------------------
 # Reading in HapMap3+ 
