@@ -156,7 +156,6 @@ if(!"frq" %in% colnames(snp_info)){
     snp_info$frq = snp_info$af_UKBB
   }
 }
-snp_info <- select(snp_info, !af_UKBB)
 
 # Effective population size ------------------------------------------------------------------------------------------------------
 if(!"n_eff" %in% colnames(snp_info)){
@@ -229,6 +228,7 @@ if("info" %in% colnames(df_beta)) {
 df_beta$frq2 <- ifelse(df_beta$beta * snp_info$beta[df_beta$`_NUM_ID_.ss`] < 0,
                           1 - df_beta$frq, df_beta$frq)
 diff <- with(df_beta, abs(af_UKBB - frq2))
+df_beta <- select(df_beta, !af_UKBB)
   
 df_beta$is_bad <- with(df_beta,
                        diff > 0.05 |
