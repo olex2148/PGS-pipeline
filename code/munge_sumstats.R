@@ -69,13 +69,16 @@ if(ref_genome != "GRCH37") {
 }
 
 # Renaming to fit snp_match format and filtering away sex chromosomes ---------------------------------------------------
-sumstats <- sumstats %>%
-  rename(POS = BP, A0 = A1, A1 = A2, BETA_SE = SE) %>%
-  filter(CHR %in% 1:22) %>%
-  mutate(CHR = as.numeric(CHR))
-
-# Making header lower case
 colnames(sumstats) <- tolower(colnames(sumstats))
+
+sumstats <- sumstats %>%
+  rename(pos = bp, a0 = a1, a1 = a2, beta_se = se, rsid = snp) %>%
+  filter(chr %in% 1:22) %>%
+  mutate(chr = as.numeric(chr))
+
+# Removing some redundant cols
+if("dire" %in% colnames(sumstats)){sumstats <- select(sumstats, !dire)}
+if("ngt" %in% colnames(sumstats)){sumstats <- select(sumstats, !ngt)}
 
 # Finding Hapmap overlap with sumstats -----------------------------------------------------------------------------------
 # Reading in HapMap3+ 
@@ -84,7 +87,8 @@ info <- readRDS(runonce::download_file(
   dir = paths$hapmap_path, fname = "map_hm3_plus.rds"))
 
 # Finding sumstats/HapMap3+ overlap
-snp_info <- snp_match(sumstats, info, match.min.prop = 0.1)                                              
+snp_info <- snp_match(sumstats, info, match.min.prop = 0.1) %>%
+  select(-c(pos_hg18, pos_hg38))
 
 cat(nrow(snp_info), "variants in overlap with HapMap3+. \n")
 
@@ -94,6 +98,7 @@ cat(nrow(snp_info), "variants in overlap with HapMap3+. \n")
 # If reported effect size is odds ratio
 if("or" %in% colnames(snp_info)){
   snp_info$beta = with(snp_info, log(or))
+  snp_info <- select(snp_info, !or)
   
   # If SE already there, check that derived and reported p-values match. Otherwise recompute beta_se.
   if("beta_se" %in% colnames(snp_info)) {
@@ -111,14 +116,72 @@ if("or" %in% colnames(snp_info)){
   }
 }
 
+# Allele frequency ------------------------------------------
+
+# Check if frq columns are on the form frq_a_X and frq_u_X (PGC format)
+frq_cas_col <- grep("^fr?q_a_", colnames(snp_info))
+frq_con_col <- grep("^fr?q_u_", colnames(snp_info))
+
+col_cas <- as.numeric(str_extract(colnames(snp_info)[frq_cas_col], "\\d+"))
+col_con <- as.numeric(str_extract(colnames(snp_info)[frq_cas_col], "\\d+"))
+
+colnames(snp_info)[frq_cas_col] <- "frq_cas"
+colnames(snp_info)[frq_con_col] <- "frq_con"
+
+# Calc frq and weight by number of cases and controls
+if(!"frq" %in% colnames(snp_info)){
+
+  # Start by looking for frqs split between cases and controls
+  if("frq_cas" %in% colnames(snp_info)) {
+
+    # Calculating weighted mean of the two frequencies using n_cas n_con
+    if("n_cas" %in% colnames(snp_info)) {
+      snp_info$frq = with(snp_info, (frq_cas * n_cas + frq_con * n_con) / (n_cas + n_con))
+
+    # If n_cas n_con not there, look up in gwas catalog using gwasrapidd
+    } else if(!is.na(study_info)) {
+      snp_info$frq = with(snp_info, (frq_cas * num_inds$n_cas + frq_con * num_inds$n_con) / (num_inds$n_cas + num_inds$n_con))
+
+    # Otherwise use cas con from frq cols (PGC format)
+    } else if(length(frq_cas_col) > 0) {
+      snp_info$frq = with(snp_info, (frq_cas * col_cas + frq_con * col_con) / (col_cas + col_con))
+    }
+      
+  # Removing frq_cas frq_con afterwards
+  snp_info <- select(snp_info, -c(frq_cas, frq_con))
+
+  # If frq_cas frq_con not in sumstats, use af_UKBB instead
+  } else { 
+    snp_info$frq = snp_info$af_UKBB
+  }
+}
+snp_info <- select(snp_info, !af_UKBB)
+
 # Effective population size ----------------------------------
 if(!"n_eff" %in% colnames(snp_info)){
-  snp_info$n_eff = if("neff_half" %in% colnames(snp_info)){
-    with(snp_info, neff_half * 2)
+
+  # Prioritizing estimation from neff_half
+  if("neff_half" %in% colnames(snp_info)){
+    snp_info$n_eff = with(snp_info, neff_half * 2)
+
+    # Deleting col afterwards - with n_cas n_con if present
+    snp_info <- select(snp_info, !neff_half)
+    if("n_cas" %in% colnames(snp_info)){snp_info <- select(snp_info, -c(n_cas, n_con))}
+
+  # If no neff_half, check for n_cas n_con  
   } else if("n_cas" %in% colnames(snp_info)){
-    with(snp_info, 4/(1/n_cas + 1/n_con))
+    snp_info$n_eff = with(snp_info, 4/(1/n_cas + 1/n_con))
+
+    # Then delete cols
+    snp_info <- select(snp_info, -c(n_cas, n_con))
+
+  # Otherwise, look up in gwas catalog using gwasrapidd  
   } else if(!is.na(study_info)){
-    with(num_inds, 4/(1/n_cas + 1/n_con))
+    snp_info$n_eff = with(num_inds, 4/(1/n_cas + 1/n_con))
+
+  # Last resort using numbers from frq_a_cas frq_u_con (PGC)
+  } else if(length(frq_cas_col) > 0){
+    snp_info$n_eff = 4/(1/col_cas + 1/col_con)
   }
 }
 
@@ -133,32 +196,6 @@ if(!"n" %in% colnames(snp_info)) {
 # - otherwise should be added manually
 assert("No effective population size in parsed sumstats",
        "n_eff" %in% colnames(snp_info) | "n" %in% colnames(snp_info))
-
-# Allele frequency ------------------------------------------
-
-# Check if frq columns are on the form frq_a_X and frq_u_X
-frq_cas_col <- grep("^fr?q_a_", colnames(snp_info), value = TRUE)
-frq_con_col <- grep("^fr?q_u_", colnames(snp_info), value = TRUE)
-
-col_cas <- as.numeric(str_extract(frq_cas_col, "\\d+"))
-col_con <- as.numeric(str_extract(frq_con_col, "\\d+"))
-
-colnames(snp_info)[frq_cas_col] <- "frq_cas"
-colnames(snp_info)[frq_con_col] <- "frq_con"
-
-
-# Calc frq and weight by number of cases and controls
-if(!"frq" %in% colnames(snp_info)){
-  if("frq_cas" %in% colnames(snp_info)) {
-    if(!is.na(study_info)) {
-      snp_info$frq = with(snp_info, (frq_cas * num_inds$n_cas + frq_con * num_inds$n_con) / (num_inds$n_cas + num_inds$n_con))
-    } else if(length(frq_cas_col) > 0) {
-      snp_info$frq = with(snp_info, (frq_cas * col_cas + frq_con * col_con) / (col_cas + col_con))
-    }
-  } else { # If frq still not in sumstats use af_UKBB instead
-    snp_info$frq = snp_info$af_UKBB
-  }
-}
 
 # Z score ----------------------------------------------------
 # if(!"beta" %in% colnames(snp_info) & "z" %in% colnames(snp_info)){
