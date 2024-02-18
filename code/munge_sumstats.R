@@ -74,18 +74,18 @@ if(all(c("SNP", "CHR", "BP") %in% colnames(sumstats))) {  # MungeSumstats needs 
 # Renaming to fit snp_match format and filtering away sex chromosomes ---------------------------------------------------
 colnames(sumstats) <- tolower(colnames(sumstats))
 
-if(all(c("a1", "a2" %in% colnames(sumstats)))){  sumstats <- rename(sumstats, a0 = a1, a1 = a2)}
+if(all(c("a1", "a2") %in% colnames(sumstats))){  sumstats <- rename(sumstats, a0 = a1, a1 = a2)}
 if("bp" %in% colnames(sumstats)){                sumstats <- rename(sumstats, pos = bp)}
 if("snp" %in% colnames(sumstats)){               sumstats <- rename(sumstats, rsid = snp)}
 if("se" %in% colnames(sumstats)){                sumstats <- rename(sumstats, beta_se = se)}
 if("chr" %in% colnames(sumstats)){               sumstats <- filter(sumstats, chr %in% 1:22) %>%  mutate(chr = as.numeric(chr))}
 
 # Removing some redundant cols
-if("direction" %in% colnames(sumstats)){sumstats <- select(sumstats, !direction)}
-if("ngt" %in% colnames(sumstats)){sumstats <- select(sumstats, !ngt)}
-if("hetisqt" %in% colnames(sumstats)){sumstats <- select(sumstats, !hetisqt)}
-if("hetdf" %in% colnames(sumstats)){sumstats <- select(sumstats, !hetdf)}
-if("hetpval" %in% colnames(sumstats)){sumstats <- select(sumstats, !hetpval)}
+if("direction" %in% colnames(sumstats)){         sumstats <- select(sumstats, !direction)}
+if("ngt" %in% colnames(sumstats)){               sumstats <- select(sumstats, !ngt)}
+if("hetisqt" %in% colnames(sumstats)){           sumstats <- select(sumstats, !hetisqt)}
+if("hetdf" %in% colnames(sumstats)){             sumstats <- select(sumstats, !hetdf)}
+if("hetpval" %in% colnames(sumstats)){           sumstats <- select(sumstats, !hetpval)}
 
 # Odds ratio -------------------------------------------------------------------------------------------------------------
 # If reported effect size is odds ratio
