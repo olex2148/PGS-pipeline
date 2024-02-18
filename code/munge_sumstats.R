@@ -211,15 +211,15 @@ assert("No effective population size in parsed sumstats",
 
 # QC -------------------------------------------------------------------------------------------------------------------------------------
 df_beta <- snp_info %>% 
-  # Beta, beta_se, n_eff  
-  filter(beta != 0,
-         beta_se > 0,
-         n_eff > (0.7 * max(n_eff))
-         ) %>% 
+  filter(beta != 0, beta_se > 0) %>% 
   # sd of af compared to sd of ss
   mutate(sd_af = sqrt(2 * frq * (1 - frq)),
          sd_ss = 2 / sqrt(n_eff * beta_se^2 + beta^2),
          sd_ss2 = sd_ss/quantile(sd_ss, 0.999) * sqrt(0.5))
+
+if("n_eff" %in% colnames(df_beta)) {
+  df_beta <- filter(df_beta, n_eff > (0.7 * max(n_eff)))
+}
 
 if("info" %in% colnames(df_beta)) {
   df_beta <- filter(df_beta, info > 0.7)
