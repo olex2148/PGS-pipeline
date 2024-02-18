@@ -41,8 +41,8 @@ def munge_sumstats(inputfile):
 	outputs = [munged_sumstats]
 	working_dir = paths['work_dir']
 	options = {
-		'memory': '20g',
-		'walltime': '00:10:00',
+		'memory': '40g',
+		'walltime': '00:15:00',
 		'cores': '2'
 	}
 	
