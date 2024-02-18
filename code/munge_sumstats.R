@@ -62,7 +62,7 @@ head(sumstats)
 
 # Inferring reference genome and performing lift_over if necessary -------------------------------------------------------
 # If SNP col is chr:pos
-if(any(grepl(":", sumstats$SNP))) { 
+if(all(grepl(":", sumstats$SNP))) { 
   sumstats <- tidyr::separate(sumstats,                                        # SLOW
                               col = SNP, into = c("CHR", "BP"), sep = ":", 
                               convert = TRUE, extra = "drop")                  # If the col contains more than one : - e.g. chr:pos:a0:a1, :a0:a1 is dropped
@@ -127,8 +127,14 @@ sumstats$a0 <- toupper(sumstats$a0)
 sumstats$a1 <- toupper(sumstats$a1)
 
 # Finding sumstats/HapMap3+ overlap
-snp_info <- snp_match(sumstats, info, match.min.prop = 0.1) %>%
-  select(-c(pos_hg18, pos_hg38))
+if(all(c("chr", "pos") %in% colnames(sumstats))) {
+  snp_info <- snp_match(sumstats, info, match.min.prop = 0.1) %>%
+    select(-c(pos_hg18, pos_hg38))
+} else { # Some files have only SNP/rsid - attempt to snp_match without pos then
+  snp_info <- snp_match(sumstats, info, match.min.prop = 0.1, join_by_pos = FALSE) %>%
+    select(-c(pos_hg18, pos_hg38))
+}
+
 
 cat(nrow(snp_info), "variants in overlap with HapMap3+. \n")
 
