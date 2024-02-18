@@ -75,12 +75,13 @@ if(all(c("SNP", "CHR", "BP") %in% colnames(sumstats))) {  # MungeSumstats needs 
 colnames(sumstats) <- tolower(colnames(sumstats))
 
 sumstats <- sumstats %>%
-  rename(a0 = a1, a1 = a2, beta_se = se) %>%
+  rename(a0 = a1, a1 = a2) %>%
   filter(chr %in% 1:22) %>%
   mutate(chr = as.numeric(chr))
 
 if("bp" %in% colnames(sumstats)){rename(sumstats, pos = bp)}
 if("snp" %in% colnames(sumstats)){rename(sumstats, rsid = snp)}
+if("se" %in% colnames(sumstats)){rename(sumstats, beta_se = se)}
 
 # Removing some redundant cols
 if("direction" %in% colnames(sumstats)){sumstats <- select(sumstats, !direction)}
