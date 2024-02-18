@@ -209,9 +209,8 @@ assert("No effective population size in parsed sumstats",
 # }
 
 # QC -------------------------------------------------------------------------------------------------------------------------------------
-
 df_beta <- snp_info %>% 
-  # Beta, beta_se, n_eff  -----------------------------------
+  # Beta, beta_se, n_eff  
   filter(beta != 0,
          beta_se > 0,
          n_eff > (0.7 * max(n_eff))
@@ -225,10 +224,9 @@ if("info" %in% colnames(df_beta)) {
   df_beta <- filter(df_beta, info > 0.7)
 }
 
-df_beta$frq2 <- ifelse(df_beta$beta * snp_info$beta[df_beta$`_NUM_ID_.ss`] < 0,
+df_beta$frq2 <- ifelse(df_beta$beta * sumstats$beta[df_beta$`_NUM_ID_.ss`] < 0,
                           1 - df_beta$frq, df_beta$frq)
 diff <- with(df_beta, abs(af_UKBB - frq2))
-df_beta <- select(df_beta, !af_UKBB)
   
 df_beta$is_bad <- with(df_beta,
                        diff > 0.05 |
@@ -247,7 +245,7 @@ p <- qplot(sd_af, sd_ss2, color = is_bad, alpha = I(0.5),
 
 ggsave(paste0(res_folder, "/", base_name, "_QC.jpeg"), p)
 
-df_beta <- filter(df_beta, !is_bad)
+df_beta <- df_beta %>% filter(!is_bad) %>% select(-c(sd_af, sd_ss, sd_ss2, af_UKBB))
   
 
 cat(nrow(df_beta), "variants remaining following QC. \n")
