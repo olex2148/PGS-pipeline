@@ -74,14 +74,11 @@ if(all(c("SNP", "CHR", "BP") %in% colnames(sumstats))) {  # MungeSumstats needs 
 # Renaming to fit snp_match format and filtering away sex chromosomes ---------------------------------------------------
 colnames(sumstats) <- tolower(colnames(sumstats))
 
-sumstats <- sumstats %>%
-  rename(a0 = a1, a1 = a2) %>%
-  filter(chr %in% 1:22) %>%
-  mutate(chr = as.numeric(chr))
-
-if("bp" %in% colnames(sumstats)){rename(sumstats, pos = bp)}
-if("snp" %in% colnames(sumstats)){rename(sumstats, rsid = snp)}
-if("se" %in% colnames(sumstats)){rename(sumstats, beta_se = se)}
+if(all(c("a1", "a2" %in% colnames(sumstats)))){  sumstats <- rename(sumstats, a0 = a1, a1 = a2)}
+if("bp" %in% colnames(sumstats)){                sumstats <- rename(sumstats, pos = bp)}
+if("snp" %in% colnames(sumstats)){               sumstats <- rename(sumstats, rsid = snp)}
+if("se" %in% colnames(sumstats)){                sumstats <- rename(sumstats, beta_se = se)}
+if("chr" %in% colnames(sumstats)){               sumstats <- filter(sumstats, chr %in% 1:22) %>%  mutate(chr = as.numeric(chr))}
 
 # Removing some redundant cols
 if("direction" %in% colnames(sumstats)){sumstats <- select(sumstats, !direction)}
