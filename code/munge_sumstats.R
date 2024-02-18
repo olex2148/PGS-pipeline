@@ -81,7 +81,7 @@ if("direction" %in% colnames(sumstats)){sumstats <- select(sumstats, !direction)
 if("ngt" %in% colnames(sumstats)){sumstats <- select(sumstats, !ngt)}
 if("hetisqt" %in% colnames(sumstats)){sumstats <- select(sumstats, !hetisqt)}
 if("hetdf" %in% colnames(sumstats)){sumstats <- select(sumstats, !hetdf)}
-if("hetpva" %in% colnames(sumstats)){sumstats <- select(sumstats, !hetpva)}
+if("hetpval" %in% colnames(sumstats)){sumstats <- select(sumstats, !hetpval)}
 
 # Odds ratio -------------------------------------------------------------------------------------------------------------
 # If reported effect size is odds ratio
