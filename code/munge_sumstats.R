@@ -115,6 +115,10 @@ info <- readRDS(runonce::download_file(
   "https://figshare.com/ndownloader/files/37802721",
   dir = paths$hapmap_path, fname = "map_hm3_plus.rds"))
 
+# Making sure a0 and a1 are upper case
+sumstats$a0 <- toupper(sumstats$a0)
+sumstats$a1 <- toupper(sumstats$a1)
+
 # Finding sumstats/HapMap3+ overlap
 snp_info <- snp_match(sumstats, info, match.min.prop = 0.1) %>%
   select(-c(pos_hg18, pos_hg38))
