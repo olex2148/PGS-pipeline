@@ -77,7 +77,7 @@ sumstats <- sumstats %>%
   mutate(chr = as.numeric(chr))
 
 # Removing some redundant cols
-if("dire" %in% colnames(sumstats)){sumstats <- select(sumstats, !dire)}
+if("direction" %in% colnames(sumstats)){sumstats <- select(sumstats, !direction)}
 if("ngt" %in% colnames(sumstats)){sumstats <- select(sumstats, !ngt)}
 if("hetisqt" %in% colnames(sumstats)){sumstats <- select(sumstats, !hetisqt)}
 if("hetdf" %in% colnames(sumstats)){sumstats <- select(sumstats, !hetdf)}
