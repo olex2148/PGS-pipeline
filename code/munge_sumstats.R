@@ -294,6 +294,17 @@ if(!is.na(study_info)) {
 } else {
   foelgefil_df <- data.frame(
     ID = base_name,
+    Accession_ID = NA,
+    Reported_Trait = NA,
+    PubMed_ID = NA,
+    First_Author = NA,
+    Journal = NA,
+    Title = NA,
+    Publication_Date = NA,
+    N = NA,
+    N_Cases = NA,
+    N_Controls = NA,
+    Ancestral_Group = NA,
     M_Input = nrow(sumstats),     # Variants in original sumstats
     M_HapMap = nrow(snp_info),    # Overlap with HapMap3+
     M_QC = nrow(df_beta)          # Variants after QC and iPSYCH overlap
