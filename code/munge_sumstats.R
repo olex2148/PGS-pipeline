@@ -58,7 +58,7 @@ if(!is.na(accession_id)) {
 
 # Standardizing header --------------------------------------------------------------------------------------------------
 sumstats <- standardise_header(sumstats, mapping_file = sumstatsColHeaders, return_list = FALSE)
-
+head(sumstats)
 # Inferring reference genome and performing lift_over if necessary -------------------------------------------------------
 ref_genome <- get_genome_builds(sumstats_list = list(ss1 = sumstats))$ss1
 
