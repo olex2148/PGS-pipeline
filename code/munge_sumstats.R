@@ -56,10 +56,10 @@ if(!is.na(accession_id)) {
   
 } else {
   study_info <- NA
-  num_inds <- NA
+  num_inds <- list("n" = NA, "n_cas" = NA, "n_con" = NA)
 }
 
-foelgefil_df <- create_foelgefil(accesion_id = accession_id) %>% 
+foelgefil_df <- create_foelgefil(accession_id = accession_id) %>% 
   mutate(ID = base_name,
          M_Input = nrow(sumstats))
 
@@ -69,10 +69,12 @@ head(sumstats)
 
 # Inferring reference genome and performing lift_over if necessary -------------------------------------------------------
 # If SNP col is chr:pos
-if(all(grepl(":", sumstats$SNP))) { 
-  sumstats <- tidyr::separate(sumstats,                                        # SLOW
-                              col = SNP, into = c("CHR", "BP"), sep = ":", 
-                              convert = TRUE, extra = "drop")                  # If the col contains more than one : - e.g. chr:pos:a0:a1, :a0:a1 is dropped
+if("SNP" %in% colnames(sumstats)){
+  if(all(grepl(":", sumstats$SNP))) { 
+    sumstats <- tidyr::separate(sumstats,                                        # SLOW
+                                col = SNP, into = c("CHR", "BP"), sep = ":", 
+                                convert = TRUE, extra = "drop")                  # If the col contains more than one : - e.g. chr:pos:a0:a1, :a0:a1 is dropped
+  }
 }
 
 if(all(c("SNP", "CHR", "BP") %in% colnames(sumstats))) {  # MungeSumstats needs these three cols to infer ref
