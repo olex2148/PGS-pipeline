@@ -48,13 +48,53 @@ base_name <- gsub("_munged.rds", "", basename(output_path))
 # Accession ID to find in gwas catalog using gwasrapidd ------------------------------------------------------------------
 accession_id <- str_match(args[1], "accession\\s*(.*?)\\s*_")[,2]
 
-# Not all requested sumstats had accession ID
+# If accession ID present, use to get info for foelgefil
 if(!is.na(accession_id)) {
   study_info <- get_studies(study_id = accession_id)
   num_inds <- get_n_cas_con(study_info@studies$initial_sample_size) # Get number of cases and controls from sample size string
+  
+  # Foelgefil
+  foelgefil_df <- data.frame(
+    ID = base_name,
+    Accession_ID = accession_id,
+    Reported_Trait = study_info@studies$reported_trait,
+    PubMed_ID = study_info@publications$pubmed_id,
+    First_Author = study_info@publications$author_fullname,
+    Journal = study_info@publications$publication,
+    Title = study_info@publications$title,
+    Publication_Date = study_info@publications$publication_date,
+    N <-  sum(study_info@ancestries$number_of_individuals),
+    N_Cases = num_inds$n_cas,
+    N_Controls = num_inds$n_con,
+    Ancestral_Group = study_info@ancestral_groups$ancestral_group,
+    M_Input = nrow(sumstats),     
+    M_HapMap = NA,    
+    M_QC = NA          
+  )
+  
 } else {
   study_info <- NA
+  
+  foelgefil_df <- data.frame(
+    ID = base_name,
+    Accession_ID = NA,
+    Reported_Trait = NA,
+    PubMed_ID = NA,
+    First_Author = NA,
+    Journal = NA,
+    Title = NA,
+    Publication_Date = NA,
+    N = NA,
+    N_Cases = NA,
+    N_Controls = NA,
+    Ancestral_Group = NA,
+    M_Input = nrow(sumstats),
+    M_HapMap = NA,
+    M_QC = NA          
+  )
 }
+
+
 
 # Standardizing header --------------------------------------------------------------------------------------------------
 sumstats <- standardise_header(sumstats, mapping_file = sumstatsColHeaders, return_list = FALSE)
@@ -81,7 +121,7 @@ if(all(c("SNP", "CHR", "BP") %in% colnames(sumstats))) {  # MungeSumstats needs 
 # Renaming to fit snp_match format and filtering away sex chromosomes ---------------------------------------------------
 colnames(sumstats) <- tolower(colnames(sumstats))
 
-if(all(c("a1", "a2") %in% colnames(sumstats))){  sumstats <- rename(sumstats, a0 = a2, a1 = a1)}
+if(all(c("a1", "a2") %in% colnames(sumstats))){  sumstats <- rename(sumstats, a0 = a1, a1 = a2)}
 if("bp" %in% colnames(sumstats)){                sumstats <- rename(sumstats, pos = bp)}
 if("snp" %in% colnames(sumstats)){               sumstats <- rename(sumstats, rsid = snp)}
 if("se" %in% colnames(sumstats)){                sumstats <- rename(sumstats, beta_se = se)}
@@ -136,6 +176,9 @@ snp_info <- snp_match(sumstats, info, match.min.prop = 0.1) %>%
 
 cat(nrow(snp_info), "variants in overlap with HapMap3+. \n")
 
+# Saving in foelgefil
+foelgefil_df$M_HapMap <-  nrow(snp_info)
+
 # Allele frequency -------------------------------------------------------------------------------------------------------
 
 # Check if frq columns are on the form frq_a_X and frq_u_X (PGC format)
@@ -185,11 +228,22 @@ if(!"n_eff" %in% colnames(snp_info)){
 
     # Deleting col afterwards - with n_cas n_con if present
     snp_info <- select(snp_info, !neff_half)
-    if("n_cas" %in% colnames(snp_info)){snp_info <- select(snp_info, -c(n_cas, n_con))}
+    if("n_cas" %in% colnames(snp_info)){
+      
+      # Saving the info before deleting
+      foelgefil_df$N_Cases <- mean(snp_info$n_cas)
+      foelgefil_df$N_Controls <- mean(snp_info$n_con)
+      
+      snp_info <- select(snp_info, -c(n_cas, n_con))
+      }
 
   # If no neff_half, check for n_cas n_con  
   } else if("n_cas" %in% colnames(snp_info)){
     snp_info$n_eff = with(snp_info, 4/(1/n_cas + 1/n_con))
+    
+    # Saving the info before deleting
+    foelgefil_df$N_Cases <- mean(snp_info$n_cas)
+    foelgefil_df$N_Controls <- mean(snp_info$n_con)
 
     # Then delete cols
     snp_info <- select(snp_info, -c(n_cas, n_con))
@@ -197,6 +251,10 @@ if(!"n_eff" %in% colnames(snp_info)){
   # Otherwise, look up in gwas catalog using gwasrapidd  
   } else if(!is.na(study_info)){
     snp_info$n_eff = with(num_inds, 4/(1/n_cas + 1/n_con))
+    
+    # Saving the info
+    foelgefil_df$N_Cases <- num_inds$n_cas
+    foelgefil_df$N_Controls <- num_inds$n_con
 
   # Last resort using numbers from frq_a_cas frq_u_con (PGC)
   } else if(length(frq_cas_col) > 0){
@@ -281,10 +339,13 @@ dosage$map <- dosage$map %>%
 in_test <- vctrs::vec_in(df_beta[, c("chr", "pos")], dosage$map[, c("chr", "pos")])
 df_beta <- df_beta[in_test, ]                          
 
-# Making sure there are at least 60K variants in sumstats -----------------------------------------------------------------
-# assert("Less than 60K variants remaining in summary statistics following QC and Hapmap3+/iPSYCH overlap.",
-#        nrow(df_beta) > 60000)
+# Making sure there is not no variants in sumstats ----------------------------------------------------------------------
+assert("Less than 60K variants remaining in summary statistics following QC and Hapmap3+/iPSYCH overlap.",
+       nrow(df_beta) > 0)
 cat(nrow(df_beta), "variants remaining in munged sumstats. \n")
+
+# Saving in foelgefil
+foelgefil_df$M_QC <- nrow(df_beta)
 
 # Saving the parsed sumstats in the outputfile ---------------------------------------------------------------------------
 head(df_beta)
@@ -292,44 +353,7 @@ saveRDS(df_beta, output_path)
 
 # saveRDS(df_beta, paths$test_parsed) # for testing
 
-# Foelgefil --------------------------------------------------------------------------------------------------------------
-if(!is.na(study_info)) {
-  foelgefil_df <- data.frame(
-    ID = base_name,
-    Accession_ID = accession_id,
-    Reported_Trait = study_info@studies$reported_trait,
-    PubMed_ID = study_info@publications$pubmed_id,
-    First_Author = study_info@publications$author_fullname,
-    Journal = study_info@publications$publication,
-    Title = study_info@publications$title,
-    Publication_Date = study_info@publications$publication_date,
-    N = sum(study_info@ancestries$number_of_individuals),
-    N_Cases = num_inds$n_cas,
-    N_Controls = num_inds$n_con,
-    Ancestral_Group = study_info@ancestral_groups$ancestral_group,
-    M_Input = nrow(sumstats),     # Variants in original sumstats
-    M_HapMap = nrow(snp_info),    # Overlap with HapMap3+
-    M_QC = nrow(df_beta)          # Variants after QC and iPSYCH overlap
-  )
-} else {
-  foelgefil_df <- data.frame(
-    ID = base_name,
-    Accession_ID = NA,
-    Reported_Trait = NA,
-    PubMed_ID = NA,
-    First_Author = NA,
-    Journal = NA,
-    Title = NA,
-    Publication_Date = NA,
-    N = NA,
-    N_Cases = NA,
-    N_Controls = NA,
-    Ancestral_Group = NA,
-    M_Input = nrow(sumstats),     # Variants in original sumstats
-    M_HapMap = nrow(snp_info),    # Overlap with HapMap3+
-    M_QC = nrow(df_beta)          # Variants after QC and iPSYCH overlap
-  )
-}
+# Saving foelgefil --------------------------------------------------------------------------------------------------------
 write.table(foelgefil_df,
            file = paste0(res_folder, "/", base_name, "_foelgefil.csv"),
            sep = "\t", row.names = FALSE, append = FALSE, quote = FALSE)
