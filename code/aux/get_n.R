@@ -11,7 +11,7 @@ get_n_cas_con <- function(initial_sample_size_str) {
   parts <- unlist(strsplit(sample_size_str, ", "))
   
   # If theres only one sentence in this variable, continuous trait and will return only n
-  if(length(parts == 1)) {
+  if(length(parts) == 1) {
     n <- as.numeric(gsub("[^0-9]", "", parts))
     
     return(list("n" = n, "n_cas" = NA, "n_con" = NA))  
