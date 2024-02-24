@@ -82,7 +82,7 @@ if(!is.na(accession_id)) {
     )
       
 
-  num_inds <- get_n(study_info@studies$initial_sample_size) # Get number of cases and controls or n from sample size string
+  num_inds <- get_n_cas_con(study_info@studies$initial_sample_size) # Get number of cases and controls or n from sample size string
   if(!is.na(num_inds$n)){
     foelgefil_df <- foelgefil_df %>% 
       mutate(
@@ -326,7 +326,7 @@ p <- qplot(sd_af, sd_ss2, color = is_bad, alpha = I(0.5),
 
 ggsave(paste0(res_folder, "/", base_name, "_QC.jpeg"), p)
 
-df_beta <- df_beta %>% filter(!is_bad) %>% select(-c(sd_af, sd_ss, sd_ss2, af_UKBB))
+df_beta <- df_beta %>% filter(!is_bad) %>% select(-c(is_bad, sd_af, sd_ss, sd_ss2, af_UKBB))
   
 
 cat(nrow(df_beta), "variants remaining following QC. \n")
