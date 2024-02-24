@@ -48,18 +48,15 @@ df_beta = readRDS(munged_sumstats)
 # Running LDSC -------------------------------------------------------------------------------------------------------
 cat("Running LDSC \n")
 
+if("n" %in% colnames(df_beta) & !"n_eff" %in% colnames(df_beta)){df_beta$n_eff = df_beta$n}
+
 ld_size <- nrow(info) #snp_ldsc won't accept nrow(info) directly
-if("n_eff" %in% colnames(df_beta)){
-  ldsc <- with(df_beta, snp_ldsc(ld, ld_size = ld_size,
-                                 chi2 = (beta / beta_se)^2, 
-                                 sample_size = n_eff,
-                                 ncores = nb_cores()))
-} else if("n" %in% colnames(df_beta)) {
-  ldsc <- with(df_beta, snp_ldsc(ld, ld_size = ld_size,
-                                 chi2 = (beta / beta_se)^2, 
-                                 sample_size = n,
-                                 ncores = nb_cores()))
-}
+ldsc <- with(df_beta, snp_ldsc(ld, ld_size = ld_size,
+                               chi2 = (beta / beta_se)^2, 
+                               sample_size = n_eff,
+                               ncores = nb_cores()))
+
+
 
 h2_init <- ldsc[["h2"]]
 cat("LDSC-estimated heritability on the observed scale:", h2_init, "\n")
