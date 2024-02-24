@@ -278,8 +278,10 @@ diff <- with(df_beta, abs(af_UKBB - frq2))
   
 df_beta$is_bad <- with(df_beta,
                        diff > 0.05 |
-                       sd_ss2 < (0.7 * sd_af) | sd_ss > (sd_af + 0.1) |
-                       sd_ss2 < 0.1 | sd_af < 0.05)
+                       sd_ss2 < (0.7 * sd_af) | 
+                       sd_ss > (sd_af + 0.1) |
+                       sd_ss2 < 0.1 | 
+                       sd_af < 0.05)
 
 p <- qplot(sd_af, sd_ss2, color = is_bad, alpha = I(0.5),
            data = slice_sample(df_beta, n = 50e3)) +
