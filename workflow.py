@@ -43,7 +43,8 @@ def munge_sumstats(inputfile):
 	options = {
 		'memory': '60g',
 		'walltime': '00:30:00',
-		'cores': '2'
+		'cores': '2',
+		'account': 'NCRR-PRS'
 	}
 	
 	# Command to be run in the terminal
@@ -80,7 +81,8 @@ def compute_pgs(inputfile):
 	options = {
 		'memory': '40g',
 		'walltime': '06:00:00',
-		'cores': '23'
+		'cores': '23',
+		'account': 'NCRR-PRS'
 	}
 
 	spec = f'''
