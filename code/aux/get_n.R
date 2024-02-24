@@ -12,9 +12,9 @@ get_n_cas_con <- function(initial_sample_size_str) {
   
   # If theres only one sentence in this variable, continuous trait and will return only n
   if(length(parts == 1)) {
-    n <- as.numeric(gsub("[^0-9]", "", part))
+    n <- as.numeric(gsub("[^0-9]", "", parts))
     
-    return(list("n" = n))  
+    return(list("n" = n, "n_cas" = NA, "n_con" = NA))  
            
   } else { 
   # Otherwise return ncas ncon
@@ -31,6 +31,6 @@ get_n_cas_con <- function(initial_sample_size_str) {
         sum_controls <- sum_controls + as.numeric(gsub("[^0-9]", "", part))
       }
     }
-    return(list("n_cas" = sum_cases, "n_con" = sum_controls))
+    return(list("n" = NA, "n_cas" = sum_cases, "n_con" = sum_controls))
   }
 }

@@ -83,16 +83,15 @@ if(!is.na(accession_id)) {
       
 
   num_inds <- get_n(study_info@studies$initial_sample_size) # Get number of cases and controls or n from sample size string
-  if(length(num_inds) == 1){
-    foelgefil_df$N <- num_inds$n
-      
-  } else if(length(num_inds) == 2){
+  if(!is.na(num_inds$n)){
     foelgefil_df <- foelgefil_df %>% 
       mutate(
-        N = sum(num_inds$n_cas + num_inds$n_con),
+        N = num_inds$n,
         N_Cases = num_inds$n_cas,
         N_Controls = num_inds$n_con
       )
+  } else {
+    foelgefil_df$N = num_inds$n_cas + num_inds$n_con
   }
   
 } else {
@@ -205,7 +204,7 @@ if(!"frq" %in% colnames(snp_info)){
       snp_info$frq = with(snp_info, (frq_cas * n_cas + frq_con * n_con) / (n_cas + n_con))
 
     # If n_cas n_con not there, look up in gwas catalog using gwasrapidd
-    } else if(!is.na(study_info)) {
+    } else if(!is.na(study_info & !is.na(num_inds$n_cas))) {
       snp_info$frq = with(snp_info, (frq_cas * num_inds$n_cas + frq_con * num_inds$n_con) / (num_inds$n_cas + num_inds$n_con))
 
     # Otherwise use cas con from frq cols (PGC format)
@@ -252,12 +251,8 @@ if(!"n_eff" %in% colnames(snp_info)){
     snp_info <- select(snp_info, -c(n_cas, n_con))
 
   # Otherwise, look up in gwas catalog using gwasrapidd  
-  } else if(!is.na(study_info)){
+  } else if(!is.na(study_info) & !is.na(num_inds$n_cas)){
     snp_info$n_eff = with(num_inds, 4/(1/n_cas + 1/n_con))
-    
-    # Saving the info
-    foelgefil_df$N_Cases <- num_inds$n_cas
-    foelgefil_df$N_Controls <- num_inds$n_con
 
   # Last resort using numbers from frq_a_cas frq_u_con (PGC)
   } else if(length(frq_cas_col) > 0){
@@ -271,8 +266,8 @@ if(!"n_eff" %in% colnames(snp_info)){
 
 # Total population size for continuous traits ------------------------------------------------------------------------------------------
 if(!"n" %in% colnames(snp_info)) {
-  snp_info$n = if(!is.na(study_info)){
-    sum(study_info@ancestries$number_of_individuals)
+  if(!is.na(study_info) & !is.na(num_inds$n)){
+    snp_info$n =  num_inds$n
   }
 }
 
