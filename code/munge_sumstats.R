@@ -311,7 +311,7 @@ df_beta <- df_beta[in_test, ]
 # Making sure there is not no variants in sumstats ----------------------------------------------------------------------
 assert("Less than 60K variants remaining in summary statistics following QC and Hapmap3+/iPSYCH overlap.",
        nrow(df_beta) > 0)
-cat(nrow(df_beta), "variants remaining in munged sumstats. \n")
+cat(nrow(df_beta), "variants remaining after restricting to iPSYCH variants. \n")
 
 # Saving in foelgefil
 foelgefil_df$M_QC <- nrow(df_beta)
