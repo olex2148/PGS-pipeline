@@ -56,8 +56,6 @@ ldsc <- with(df_beta, snp_ldsc(ld, ld_size = ld_size,
                                sample_size = n_eff,
                                ncores = nb_cores()))
 
-
-
 h2_init <- ldsc[["h2"]]
 cat("LDSC-estimated heritability on the observed scale:", h2_init, "\n")
 
