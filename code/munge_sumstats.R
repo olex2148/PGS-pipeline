@@ -48,53 +48,56 @@ base_name <- gsub("_munged.rds", "", basename(output_path))
 # Accession ID to find in gwas catalog using gwasrapidd ------------------------------------------------------------------
 accession_id <- str_match(args[1], "accession\\s*(.*?)\\s*_")[,2]
 
+foelgefil_df <- data.frame(
+  ID = base_name,
+  Accession_ID = NA,
+  Reported_Trait = NA,
+  PubMed_ID = NA,
+  First_Author = NA,
+  Journal = NA,
+  Title = NA,
+  Publication_Date = NA,
+  N = NA,
+  N_Cases = NA,
+  N_Controls = NA,
+  M_Input = nrow(sumstats),
+  M_HapMap = NA,
+  M_QC = NA          
+)
+
 # If accession ID present, use to get info for foelgefil
 if(!is.na(accession_id)) {
   study_info <- get_studies(study_id = accession_id)
-  num_inds <- get_n_cas_con(study_info@studies$initial_sample_size) # Get number of cases and controls from sample size string
   
-  # Foelgefil
-  foelgefil_df <- data.frame(
-    ID = base_name,
-    Accession_ID = accession_id,
-    Reported_Trait = study_info@studies$reported_trait,
-    PubMed_ID = study_info@publications$pubmed_id,
-    First_Author = study_info@publications$author_fullname,
-    Journal = study_info@publications$publication,
-    Title = study_info@publications$title,
-    Publication_Date = study_info@publications$publication_date,
-    N <-  sum(study_info@ancestries$number_of_individuals),
-    N_Cases = num_inds$n_cas,
-    N_Controls = num_inds$n_con,
-    Ancestral_Group = study_info@ancestral_groups$ancestral_group,
-    M_Input = nrow(sumstats),     
-    M_HapMap = NA,    
-    M_QC = NA          
-  )
+  # Saving variables
+  foelgefil_df <- foelgefil_df %>% 
+    mutate(
+      Accession_ID = accession_id,
+      Reported_Trait = study_info@studies$reported_trait,
+      PubMed_ID = study_info@publications$pubmed_id,
+      First_Author = study_info@publications$author_fullname,
+      Journal = study_info@publications$publication,
+      Title = study_info@publications$title,
+      Publication_Date = study_info@publications$publication_date
+    )
+      
+
+  num_inds <- get_n(study_info@studies$initial_sample_size) # Get number of cases and controls or n from sample size string
+  if(length(num_inds) == 1){
+    foelgefil_df$N <- num_inds$n
+      
+  } else if(length(num_inds) == 2){
+    foelgefil_df <- foelgefil_df %>% 
+      mutate(
+        N = sum(num_inds$n_cas + num_inds$n_con),
+        N_Cases = num_inds$n_cas,
+        N_Controls = num_inds$n_con
+      )
+  }
   
 } else {
   study_info <- NA
-  
-  foelgefil_df <- data.frame(
-    ID = base_name,
-    Accession_ID = NA,
-    Reported_Trait = NA,
-    PubMed_ID = NA,
-    First_Author = NA,
-    Journal = NA,
-    Title = NA,
-    Publication_Date = NA,
-    N = NA,
-    N_Cases = NA,
-    N_Controls = NA,
-    Ancestral_Group = NA,
-    M_Input = nrow(sumstats),
-    M_HapMap = NA,
-    M_QC = NA          
-  )
 }
-
-
 
 # Standardizing header --------------------------------------------------------------------------------------------------
 sumstats <- standardise_header(sumstats, mapping_file = sumstatsColHeaders, return_list = FALSE)
@@ -259,6 +262,10 @@ if(!"n_eff" %in% colnames(snp_info)){
   # Last resort using numbers from frq_a_cas frq_u_con (PGC)
   } else if(length(frq_cas_col) > 0){
     snp_info$n_eff = 4/(1/col_cas + 1/col_con)
+    
+    # Saving the info
+    foelgefil_df$N_Cases <- col_cas
+    foelgefil_df$N_Controls <- col_con
   }
 }
 
