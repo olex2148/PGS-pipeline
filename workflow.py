@@ -78,8 +78,8 @@ def compute_pgs(inputfile):
 		'foelgefil': foelgefil
 	}
 	options = {
-		'memory': '20g',
-		'walltime': '04:00:00',
+		'memory': '40g',
+		'walltime': '06:00:00',
 		'cores': '23'
 	}
 
