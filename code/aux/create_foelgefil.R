@@ -40,7 +40,12 @@ create_foelgefil <- function(accession_id){
           N_Controls = num_inds$n_con
         )
     } else {
-      foelgefil_df$N = num_inds$n_cas + num_inds$n_con
+      foelgefil_df <- foelgefil_df %>% 
+        mutate(
+          N = num_inds$n_cas + num_inds$n_con,
+          N_Cases = num_inds$n_cas,
+          N_Controls = num_inds$n_con
+        )
     }
   }
   
