@@ -34,6 +34,7 @@ suppressPackageStartupMessages({
 paths <- fromJSON(file = "data/paths.json")
 load(paths$col_header)
 source(paths$get_n_function)
+source(paths$create_foelgefil_function)
 # sumstats = read_sumstats(paths$test_path) # For testing
 
 # Command line arguments for this script
@@ -48,56 +49,19 @@ base_name <- gsub("_munged.rds", "", basename(output_path))
 # Accession ID to find in gwas catalog using gwasrapidd ------------------------------------------------------------------
 accession_id <- str_match(args[1], "accession\\s*(.*?)\\s*_")[,2]
 
-foelgefil_df <- data.frame(
-  ID = base_name,
-  Accession_ID = NA,
-  Reported_Trait = NA,
-  PubMed_ID = NA,
-  First_Author = NA,
-  Journal = NA,
-  Title = NA,
-  Publication_Date = NA,
-  N = NA,
-  N_Cases = NA,
-  N_Controls = NA,
-  M_Input = nrow(sumstats),
-  M_HapMap = NA,
-  M_QC = NA          
-)
-num_inds <- NA
-
 # If accession ID present, use to get info for foelgefil
 if(!is.na(accession_id)) {
   study_info <- get_studies(study_id = accession_id)
-  
-  # Saving variables
-  foelgefil_df <- foelgefil_df %>% 
-    mutate(
-      Accession_ID = accession_id,
-      Reported_Trait = study_info@studies$reported_trait,
-      PubMed_ID = study_info@publications$pubmed_id,
-      First_Author = study_info@publications$author_fullname,
-      Journal = study_info@publications$publication,
-      Title = study_info@publications$title,
-      Publication_Date = study_info@publications$publication_date
-    )
-      
-
   num_inds <- get_n_cas_con(study_info@studies$initial_sample_size) # Get number of cases and controls or n from sample size string
-  if(!is.na(num_inds$n)){
-    foelgefil_df <- foelgefil_df %>% 
-      mutate(
-        N = num_inds$n,
-        N_Cases = num_inds$n_cas,
-        N_Controls = num_inds$n_con
-      )
-  } else {
-    foelgefil_df$N = num_inds$n_cas + num_inds$n_con
-  }
   
 } else {
   study_info <- NA
+  num_inds <- NA
 }
+
+foelgefil_df <- create_foelgefil(accesion_id = accession_id) %>% 
+  mutate(ID = base_name,
+         M_Input = nrow(sumstats))
 
 # Standardizing header --------------------------------------------------------------------------------------------------
 sumstats <- standardise_header(sumstats, mapping_file = sumstatsColHeaders, return_list = FALSE)
