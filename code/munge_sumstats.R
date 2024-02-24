@@ -64,6 +64,7 @@ foelgefil_df <- data.frame(
   M_HapMap = NA,
   M_QC = NA          
 )
+num_inds <- NA
 
 # If accession ID present, use to get info for foelgefil
 if(!is.na(accession_id)) {
