@@ -89,24 +89,19 @@ if(all(c("SNP", "CHR", "BP") %in% colnames(sumstats))) {  # MungeSumstats needs 
 }
 
 # Renaming to fit snp_match format and filtering away sex chromosomes ---------------------------------------------------
-colnames(sumstats) <- tolower(colnames(sumstats))
+sumstats <- snp_match_names(sumstats)
 
-if(all(c("a1", "a2") %in% colnames(sumstats))){  sumstats <- rename(sumstats, a0 = a1, a1 = a2)}
-if("bp" %in% colnames(sumstats)){                sumstats <- rename(sumstats, pos = bp)}
-if("snp" %in% colnames(sumstats)){               sumstats <- rename(sumstats, rsid = snp)}
-if("se" %in% colnames(sumstats)){                sumstats <- rename(sumstats, beta_se = se)}
-if("chr" %in% colnames(sumstats)){               sumstats <- sumstats %>% filter(chr %in% 1:22) %>%  mutate(chr = as.numeric(chr))}
+if("chr" %in% colnames(sumstats)){sumstats <- sumstats %>% filter(chr %in% 1:22) %>%  mutate(chr = as.numeric(chr))}
 
-# Removing some redundant cols
-if("direction" %in% colnames(sumstats)){         sumstats <- select(sumstats, !direction)}
-if("ngt" %in% colnames(sumstats)){               sumstats <- select(sumstats, !ngt)}
-if("hetisqt" %in% colnames(sumstats)){           sumstats <- select(sumstats, !hetisqt)}
-if("hetdf" %in% colnames(sumstats)){             sumstats <- select(sumstats, !hetdf)}
-if("hetpval" %in% colnames(sumstats)){           sumstats <- select(sumstats, !hetpval)}
-
-# Odds ratio -------------------------------------------------------------------------------------------------------------
-# If reported effect size is odds ratio
+# Other effect size than beta -------------------------------------------------------------------------------------------------------------
+# Odds ratio
 sumstats <- or_to_beta(sumstats)
+
+# Z score
+if(!"beta" %in% colnames(snp_info) & "z" %in% colnames(snp_info)){
+  snp_info$beta_se <- with(snp_info, sqrt(2 / frq * (1 - frq) * n_eff))
+  snp_info$beta <- with(snp_info, beta_se * abs(z) * sign(z))
+}
 
 # Finding Hapmap overlap with sumstats -----------------------------------------------------------------------------------
 # Reading in HapMap3+ 
@@ -221,17 +216,6 @@ if(!"n" %in% colnames(snp_info)) {
 # - otherwise should be added manually
 assert("No effective population size in parsed sumstats",
        "n_eff" %in% colnames(snp_info) | "n" %in% colnames(snp_info))
-
-# Z score -------------------------------------------------------------------------------------------------------------------------------
-# What I would do: get beta_se from n_eff and freq
-# 2 * frq (1 - frq) ~ 4 / (n_eff * beta_se^2)
-# get beta from p-val -> |z| and beta_se and sign(z)
-
-if(!"beta" %in% colnames(snp_info) & "z" %in% colnames(snp_info)){
-  snp_info$beta_se <- with(snp_info, sqrt(2 / frq * (1 - frq) * n_eff))
-  snp_info$beta <- with(snp_info, beta_se * abs(z) * sign(z))
-}
-
 
 # QC -------------------------------------------------------------------------------------------------------------------------------------
 if("n_eff" %in% colnames(snp_info)) {
