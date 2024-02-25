@@ -36,6 +36,7 @@ load(paths$col_header)
 source(paths$get_n_function)
 source(paths$create_foelgefil_function)
 source(paths$or_to_beta_function)
+source(paths$snp_match_names)
 # sumstats = read_sumstats(paths$test_path) # For testing
 
 # Command line arguments for this script
@@ -98,10 +99,7 @@ if("chr" %in% colnames(sumstats)){sumstats <- sumstats %>% filter(chr %in% 1:22)
 sumstats <- or_to_beta(sumstats)
 
 # Z score
-if(!"beta" %in% colnames(snp_info) & "z" %in% colnames(snp_info)){
-  snp_info$beta_se <- with(snp_info, sqrt(2 / frq * (1 - frq) * n_eff))
-  snp_info$beta <- with(snp_info, beta_se * abs(z) * sign(z))
-}
+sumstats <- z_to_beta(sumstats) # TODO: Move after frq and n
 
 # Finding Hapmap overlap with sumstats -----------------------------------------------------------------------------------
 # Reading in HapMap3+ 
@@ -277,7 +275,7 @@ df_beta <- df_beta[in_test, ]
 
 # Making sure there is not no variants in sumstats ----------------------------------------------------------------------
 assert("Less than 60K variants remaining in summary statistics following QC and Hapmap3+/iPSYCH overlap.",
-       nrow(df_beta) > 0)
+       nrow(df_beta) > 10000)
 cat(nrow(df_beta), "variants remaining after restricting to iPSYCH variants. \n")
 
 # Saving in foelgefil
