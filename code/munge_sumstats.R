@@ -35,6 +35,7 @@ paths <- fromJSON(file = "data/paths.json")
 load(paths$col_header)
 source(paths$get_n_function)
 source(paths$create_foelgefil_function)
+source(paths$or_to_beta_function)
 # sumstats = read_sumstats(paths$test_path) # For testing
 
 # Command line arguments for this script
@@ -105,29 +106,7 @@ if("hetpval" %in% colnames(sumstats)){           sumstats <- select(sumstats, !h
 
 # Odds ratio -------------------------------------------------------------------------------------------------------------
 # If reported effect size is odds ratio
-if("or" %in% colnames(sumstats)){
-  sumstats$beta = with(sumstats, log(or))
-  sumstats <- select(sumstats, !or)
-  
-  # If SE already there, check that derived and reported p-values match. Otherwise recompute beta_se.
-  if("beta_se" %in% colnames(sumstats)) {
-    z <- with(sumstats, beta/beta_se)
-    derived_pval <- 2 * (1 - pnorm(abs(z)))
-    pval_cor <- cor(derived_pval, sumstats$p) # Maybe other comparison method? 
-    
-    # If cor is poor, the reported SE is not SE of log(OR), but probably SE of OR. Therefore, compute SE of beta
-    if(pval_cor < 0.9) { # Fitting threshold?
-      sumstats$beta_se = with(sumstats, abs(beta) / qnorm(pmax(p, .Machine$double.xmin) / 2, lower.tail = FALSE)) # beta/z
-    }
-  # if SE not there, estimate with beta/z
-  } else if (!"beta_se" %in% colnames(sumstats)) {
-    sumstats$beta_se = with(sumstats, abs(beta) / qnorm(pmax(p, .Machine$double.xmin) / 2, lower.tail = FALSE)) # beta/z
-  }
-}
-# If effect size is already beta, but beta_se is not there
-if(!"beta_se" %in% colnames(sumstats)) {
-  sumstats$beta_se = with(sumstats, abs(beta) / qnorm(pmax(p, .Machine$double.xmin) / 2, lower.tail = FALSE)) # beta/z
-}
+sumstats <- or_to_beta(sumstats)
 
 # Finding Hapmap overlap with sumstats -----------------------------------------------------------------------------------
 # Reading in HapMap3+ 
@@ -171,7 +150,7 @@ if(!"frq" %in% colnames(snp_info)){
       snp_info$frq = with(snp_info, (frq_cas * n_cas + frq_con * n_con) / (n_cas + n_con))
 
     # If n_cas n_con not there, look up in gwas catalog using gwasrapidd
-    } else if(!is.na(study_info & !is.na(num_inds$n_cas))) {
+    } else if(!is.na(study_info) & !is.na(num_inds$n_cas)) {
       snp_info$frq = with(snp_info, (frq_cas * num_inds$n_cas + frq_con * num_inds$n_con) / (num_inds$n_cas + num_inds$n_con))
 
     # Otherwise use cas con from frq cols (PGC format)
@@ -244,12 +223,14 @@ assert("No effective population size in parsed sumstats",
        "n_eff" %in% colnames(snp_info) | "n" %in% colnames(snp_info))
 
 # Z score -------------------------------------------------------------------------------------------------------------------------------
-# if(!"beta" %in% colnames(snp_info) & "z" %in% colnames(snp_info)){
-# TODO: What I would do: get beta_se from n_eff and freq
+# What I would do: get beta_se from n_eff and freq
 # 2 * frq (1 - frq) ~ 4 / (n_eff * beta_se^2)
 # get beta from p-val -> |z| and beta_se and sign(z)
-#snp_info$beta = with(snp_info, z / sqrt(2*frq*(1-frq)(n_eff + z^2)))  
-#snp_info$beta_se = with(snp_info, beta/qnorm(1-p/2)) # beta/z
+
+if(!"beta" %in% colnames(snp_info) & "z" %in% colnames(snp_info)){
+  snp_info$beta_se <- with(snp_info, sqrt(2 / frq * (1 - frq) * n_eff))
+  snp_info$beta <- with(snp_info, beta_se * abs(z) * sign(z))
+}
 
 
 # QC -------------------------------------------------------------------------------------------------------------------------------------
