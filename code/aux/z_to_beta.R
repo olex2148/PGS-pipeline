@@ -5,6 +5,9 @@
 
 z_to_beta <- function(sumstats){
   if("z" %in% colnames(sumstats) & !"beta" %in% colnames(sumstats)) {
+    # In case binary pheno, renaming n_eff to n to ease of following checks
+    if("n_eff" %in% colnames(sumstats)){sumstats$n = sumstats$n_eff}
+    
     if(all(c("z", "p", "n") %in% colnames(sumstats))){
       cat("Deriving BETA from Z, N, and P")
       sumstats$beta <- with(sumstats, z/sqrt(qchisq(p, n)))
