@@ -1,4 +1,4 @@
-#' From oR to beta and beta_se
+#' From OR to beta and beta_se
 #' 
 #' @author Ole SH
 #' 
@@ -31,7 +31,7 @@ or_to_beta <- function(sumstats){
     }
   }
   # If effect size is already beta, but beta_se is not there
-  if(!"beta_se" %in% colnames(sumstats)) {
+  if(!"beta_se" %in% colnames(sumstats) & "beta" %in% colnames(sumstats)) {
     sumstats$beta_se = with(sumstats, abs(beta) / qnorm(pmax(p, .Machine$double.xmin) / 2, lower.tail = FALSE)) # beta/z
   }
   return(sumstats)
