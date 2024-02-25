@@ -90,10 +90,8 @@ if(all(c("SNP", "CHR", "BP") %in% colnames(sumstats))) {  # MungeSumstats needs 
   }
 }
 
-# Renaming to fit snp_match format and filtering away sex chromosomes ---------------------------------------------------
-sumstats <- snp_match_names(sumstats)
-
-if("chr" %in% colnames(sumstats)){sumstats <- sumstats %>% filter(chr %in% 1:22) %>%  mutate(chr = as.numeric(chr))}
+# Small edits for snp_match format ---------------------------------------------------------------
+sumstats <- snp_match_format(sumstats)
 
 # Allele frequency -------------------------------------------------------------------------------------------------------
 
@@ -134,48 +132,50 @@ if(!"frq" %in% colnames(sumstats)){
 # Effective population size ------------------------------------------------------------------------------------------------------
 if(!"n_eff" %in% colnames(sumstats)){
   
-  # If no n_eff but n, do nothing
-  if("n" %in% colnames(sumstats)){
-    break
+  # Only create n_eff, if no n either
+  if(!"n" %in% colnames(sumstats)){
     
-  # Otherwise prioritizing estimation from neff_half
-  } else if("neff_half" %in% colnames(sumstats)){
-    sumstats$n_eff = with(sumstats, neff_half * 2)
-
-    # Deleting col afterwards - with n_cas n_con if present
-    sumstats <- select(sumstats, !neff_half)
-    if("n_cas" %in% colnames(sumstats)){
+    # Prioritizing estimation from neff_half
+    if("neff_half" %in% colnames(sumstats)){
+      sumstats$n_eff = with(sumstats, neff_half * 2)
+      
+      # Deleting col afterwards - with n_cas n_con if present
+      sumstats <- select(sumstats, !neff_half)
+      if("n_cas" %in% colnames(sumstats)){
+        
+        # Saving the info before deleting
+        foelgefil_df$N_Cases <- mean(sumstats$n_cas)
+        foelgefil_df$N_Controls <- mean(sumstats$n_con)
+        
+        sumstats <- select(sumstats, -c(n_cas, n_con))
+      }
+      
+    # If no neff_half, check for n_cas n_con  
+    } else if("n_cas" %in% colnames(sumstats)){
+      sumstats$n_eff = with(sumstats, 4/(1/n_cas + 1/n_con))
       
       # Saving the info before deleting
       foelgefil_df$N_Cases <- mean(sumstats$n_cas)
       foelgefil_df$N_Controls <- mean(sumstats$n_con)
       
+      # Then delete cols
       sumstats <- select(sumstats, -c(n_cas, n_con))
-      }
+      
+    # Otherwise, look up in gwas catalog using gwasrapidd  
+    } else if(!is.na(study_info) & !is.na(num_inds$n_cas)){
+      sumstats$n_eff = with(num_inds, 4/(1/n_cas + 1/n_con))
+      
+    # Last resort using numbers from frq_a_cas frq_u_con (PGC)
+    } else if(length(frq_cas_col) > 0){
+      sumstats$n_eff = 4/(1/col_cas + 1/col_con)
+      
+      # Saving the info
+      foelgefil_df$N_Cases <- col_cas
+      foelgefil_df$N_Controls <- col_con
+    }
 
-  # If no neff_half, check for n_cas n_con  
-  } else if("n_cas" %in% colnames(sumstats)){
-    sumstats$n_eff = with(sumstats, 4/(1/n_cas + 1/n_con))
-    
-    # Saving the info before deleting
-    foelgefil_df$N_Cases <- mean(sumstats$n_cas)
-    foelgefil_df$N_Controls <- mean(sumstats$n_con)
-
-    # Then delete cols
-    sumstats <- select(sumstats, -c(n_cas, n_con))
-
-  # Otherwise, look up in gwas catalog using gwasrapidd  
-  } else if(!is.na(study_info) & !is.na(num_inds$n_cas)){
-    sumstats$n_eff = with(num_inds, 4/(1/n_cas + 1/n_con))
-
-  # Last resort using numbers from frq_a_cas frq_u_con (PGC)
-  } else if(length(frq_cas_col) > 0){
-    sumstats$n_eff = 4/(1/col_cas + 1/col_con)
-    
-    # Saving the info
-    foelgefil_df$N_Cases <- col_cas
-    foelgefil_df$N_Controls <- col_con
-  }
+  } 
+  
 }
 
 # Total population size for continuous traits ------------------------------------------------------------------------------------------
@@ -202,10 +202,6 @@ sumstats <- z_to_beta(sumstats)
 info <- readRDS(runonce::download_file(
   "https://figshare.com/ndownloader/files/37802721",
   dir = paths$hapmap_path, fname = "map_hm3_plus.rds"))
-
-# Making sure a0 and a1 are upper case
-sumstats$a0 <- toupper(sumstats$a0)
-sumstats$a1 <- toupper(sumstats$a1)
 
 # Finding sumstats/HapMap3+ overlap
 snp_info <- snp_match(sumstats, info, match.min.prop = 0.1) %>%
