@@ -94,32 +94,6 @@ sumstats <- snp_match_names(sumstats)
 
 if("chr" %in% colnames(sumstats)){sumstats <- sumstats %>% filter(chr %in% 1:22) %>%  mutate(chr = as.numeric(chr))}
 
-# Other effect size than beta -------------------------------------------------------------------------------------------------------------
-# Odds ratio
-sumstats <- or_to_beta(sumstats)
-
-# Z score
-sumstats <- z_to_beta(sumstats) # TODO: Move after frq and n
-
-# Finding Hapmap overlap with sumstats -----------------------------------------------------------------------------------
-# Reading in HapMap3+ 
-info <- readRDS(runonce::download_file(
-  "https://figshare.com/ndownloader/files/37802721",
-  dir = paths$hapmap_path, fname = "map_hm3_plus.rds"))
-
-# Making sure a0 and a1 are upper case
-sumstats$a0 <- toupper(sumstats$a0)
-sumstats$a1 <- toupper(sumstats$a1)
-
-# Finding sumstats/HapMap3+ overlap
-snp_info <- snp_match(sumstats, info, match.min.prop = 0.1) %>%
-  select(-c(pos_hg18, pos_hg38))
-
-cat(nrow(snp_info), "variants in overlap with HapMap3+. \n")
-
-# Saving in foelgefil
-foelgefil_df$M_HapMap <-  nrow(snp_info)
-
 # Allele frequency -------------------------------------------------------------------------------------------------------
 
 # Check if frq columns are on the form frq_a_X and frq_u_X (PGC format)
@@ -214,6 +188,32 @@ if(!"n" %in% colnames(snp_info)) {
 # - otherwise should be added manually
 assert("No effective population size in parsed sumstats",
        "n_eff" %in% colnames(snp_info) | "n" %in% colnames(snp_info))
+
+# Other effect size than beta -------------------------------------------------------------------------------------------------------------
+# Odds ratio
+sumstats <- or_to_beta(sumstats)
+
+# Z score
+sumstats <- z_to_beta(sumstats) # TODO: Move after frq and n
+
+# Finding Hapmap overlap with sumstats -----------------------------------------------------------------------------------
+# Reading in HapMap3+ 
+info <- readRDS(runonce::download_file(
+  "https://figshare.com/ndownloader/files/37802721",
+  dir = paths$hapmap_path, fname = "map_hm3_plus.rds"))
+
+# Making sure a0 and a1 are upper case
+sumstats$a0 <- toupper(sumstats$a0)
+sumstats$a1 <- toupper(sumstats$a1)
+
+# Finding sumstats/HapMap3+ overlap
+snp_info <- snp_match(sumstats, info, match.min.prop = 0.1) %>%
+  select(-c(pos_hg18, pos_hg38))
+
+cat(nrow(snp_info), "variants in overlap with HapMap3+. \n")
+
+# Saving in foelgefil
+foelgefil_df$M_HapMap <-  nrow(snp_info)
 
 # QC -------------------------------------------------------------------------------------------------------------------------------------
 if("n_eff" %in% colnames(snp_info)) {
