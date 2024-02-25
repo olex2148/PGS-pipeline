@@ -37,6 +37,7 @@ source(paths$get_n_function)
 source(paths$create_foelgefil_function)
 source(paths$or_to_beta_function)
 source(paths$snp_match_names)
+source(paths$z_to_beta_function)
 # sumstats = read_sumstats(paths$test_path) # For testing
 
 # Command line arguments for this script
@@ -97,79 +98,79 @@ if("chr" %in% colnames(sumstats)){sumstats <- sumstats %>% filter(chr %in% 1:22)
 # Allele frequency -------------------------------------------------------------------------------------------------------
 
 # Check if frq columns are on the form frq_a_X and frq_u_X (PGC format)
-frq_cas_col <- grep("^fr?q_a_", colnames(snp_info))
-frq_con_col <- grep("^fr?q_u_", colnames(snp_info))
+frq_cas_col <- grep("^fr?q_a_", colnames(sumstats))
+frq_con_col <- grep("^fr?q_u_", colnames(sumstats))
 
-col_cas <- as.numeric(str_extract(colnames(snp_info)[frq_cas_col], "\\d+"))
-col_con <- as.numeric(str_extract(colnames(snp_info)[frq_con_col], "\\d+"))
+col_cas <- as.numeric(str_extract(colnames(sumstats)[frq_cas_col], "\\d+"))
+col_con <- as.numeric(str_extract(colnames(sumstats)[frq_con_col], "\\d+"))
 
-colnames(snp_info)[frq_cas_col] <- "frq_cas"
-colnames(snp_info)[frq_con_col] <- "frq_con"
+colnames(sumstats)[frq_cas_col] <- "frq_cas"
+colnames(sumstats)[frq_con_col] <- "frq_con"
 
 # Calc frq and weight by number of cases and controls
-if(!"frq" %in% colnames(snp_info)){
+if(!"frq" %in% colnames(sumstats)){
 
   # Start by looking for frqs split between cases and controls
-  if("frq_cas" %in% colnames(snp_info)) {
+  if("frq_cas" %in% colnames(sumstats)) {
 
     # Calculating weighted mean of the two frequencies using n_cas n_con
-    if("n_cas" %in% colnames(snp_info)) {
-      snp_info$frq = with(snp_info, (frq_cas * n_cas + frq_con * n_con) / (n_cas + n_con))
+    if("n_cas" %in% colnames(sumstats)) {
+      sumstats$frq = with(sumstats, (frq_cas * n_cas + frq_con * n_con) / (n_cas + n_con))
 
     # If n_cas n_con not there, look up in gwas catalog using gwasrapidd
     } else if(!is.na(study_info) & !is.na(num_inds$n_cas)) {
-      snp_info$frq = with(snp_info, (frq_cas * num_inds$n_cas + frq_con * num_inds$n_con) / (num_inds$n_cas + num_inds$n_con))
+      sumstats$frq = with(sumstats, (frq_cas * num_inds$n_cas + frq_con * num_inds$n_con) / (num_inds$n_cas + num_inds$n_con))
 
     # Otherwise use cas con from frq cols (PGC format)
     } else if(length(frq_cas_col) > 0) {
-      snp_info$frq = with(snp_info, (frq_cas * col_cas + frq_con * col_con) / (col_cas + col_con))
+      sumstats$frq = with(sumstats, (frq_cas * col_cas + frq_con * col_con) / (col_cas + col_con))
     }
       
   # Removing frq_cas frq_con afterwards
-  snp_info <- select(snp_info, -c(frq_cas, frq_con))
-
-  # If frq_cas frq_con not in sumstats, use af_UKBB instead
-  } else { 
-    snp_info$frq = snp_info$af_UKBB
+  sumstats <- select(sumstats, -c(frq_cas, frq_con))
   }
 }
 
 # Effective population size ------------------------------------------------------------------------------------------------------
-if(!"n_eff" %in% colnames(snp_info)){
-
-  # Prioritizing estimation from neff_half
-  if("neff_half" %in% colnames(snp_info)){
-    snp_info$n_eff = with(snp_info, neff_half * 2)
+if(!"n_eff" %in% colnames(sumstats)){
+  
+  # If no n_eff but n, do nothing
+  if("n" %in% colnames(sumstats)){
+    break
+    
+  # Otherwise prioritizing estimation from neff_half
+  } else if("neff_half" %in% colnames(sumstats)){
+    sumstats$n_eff = with(sumstats, neff_half * 2)
 
     # Deleting col afterwards - with n_cas n_con if present
-    snp_info <- select(snp_info, !neff_half)
-    if("n_cas" %in% colnames(snp_info)){
+    sumstats <- select(sumstats, !neff_half)
+    if("n_cas" %in% colnames(sumstats)){
       
       # Saving the info before deleting
-      foelgefil_df$N_Cases <- mean(snp_info$n_cas)
-      foelgefil_df$N_Controls <- mean(snp_info$n_con)
+      foelgefil_df$N_Cases <- mean(sumstats$n_cas)
+      foelgefil_df$N_Controls <- mean(sumstats$n_con)
       
-      snp_info <- select(snp_info, -c(n_cas, n_con))
+      sumstats <- select(sumstats, -c(n_cas, n_con))
       }
 
   # If no neff_half, check for n_cas n_con  
-  } else if("n_cas" %in% colnames(snp_info)){
-    snp_info$n_eff = with(snp_info, 4/(1/n_cas + 1/n_con))
+  } else if("n_cas" %in% colnames(sumstats)){
+    sumstats$n_eff = with(sumstats, 4/(1/n_cas + 1/n_con))
     
     # Saving the info before deleting
-    foelgefil_df$N_Cases <- mean(snp_info$n_cas)
-    foelgefil_df$N_Controls <- mean(snp_info$n_con)
+    foelgefil_df$N_Cases <- mean(sumstats$n_cas)
+    foelgefil_df$N_Controls <- mean(sumstats$n_con)
 
     # Then delete cols
-    snp_info <- select(snp_info, -c(n_cas, n_con))
+    sumstats <- select(sumstats, -c(n_cas, n_con))
 
   # Otherwise, look up in gwas catalog using gwasrapidd  
   } else if(!is.na(study_info) & !is.na(num_inds$n_cas)){
-    snp_info$n_eff = with(num_inds, 4/(1/n_cas + 1/n_con))
+    sumstats$n_eff = with(num_inds, 4/(1/n_cas + 1/n_con))
 
   # Last resort using numbers from frq_a_cas frq_u_con (PGC)
   } else if(length(frq_cas_col) > 0){
-    snp_info$n_eff = 4/(1/col_cas + 1/col_con)
+    sumstats$n_eff = 4/(1/col_cas + 1/col_con)
     
     # Saving the info
     foelgefil_df$N_Cases <- col_cas
@@ -178,23 +179,23 @@ if(!"n_eff" %in% colnames(snp_info)){
 }
 
 # Total population size for continuous traits ------------------------------------------------------------------------------------------
-if(!"n" %in% colnames(snp_info)) {
+if(!"n" %in% colnames(sumstats) & !"n_eff" %in% colnames(sumstats)) {
   if(!is.na(study_info) & !is.na(num_inds$n)){
-    snp_info$n =  num_inds$n
+    sumstats$n =  num_inds$n
   }
 }
 
 # Making sure its in the sumstats 
 # - otherwise should be added manually
 assert("No effective population size in parsed sumstats",
-       "n_eff" %in% colnames(snp_info) | "n" %in% colnames(snp_info))
+       "n_eff" %in% colnames(sumstats) | "n" %in% colnames(sumstats))
 
 # Other effect size than beta -------------------------------------------------------------------------------------------------------------
 # Odds ratio
 sumstats <- or_to_beta(sumstats)
 
 # Z score
-sumstats <- z_to_beta(sumstats) # TODO: Move after frq and n
+sumstats <- z_to_beta(sumstats)
 
 # Finding Hapmap overlap with sumstats -----------------------------------------------------------------------------------
 # Reading in HapMap3+ 
@@ -211,6 +212,11 @@ snp_info <- snp_match(sumstats, info, match.min.prop = 0.1) %>%
   select(-c(pos_hg18, pos_hg38))
 
 cat(nrow(snp_info), "variants in overlap with HapMap3+. \n")
+
+# If frq still not in sumstats, use af_UKBB 
+if(!"frq" %in% colnames(snp_info)) { 
+  snp_info$frq = snp_info$af_UKBB
+}
 
 # Saving in foelgefil
 foelgefil_df$M_HapMap <-  nrow(snp_info)
