@@ -93,7 +93,7 @@ repeat {
   cat("Running LDpred2-auto with shrinkage coefficient", coef_shrink, "\n")
   
   multi_auto <- snp_ldpred2_auto(
-    corr, df_beta, h2_init = h2_init,
+    corr, df_beta, h2_init = pmax(h2_init, 0.001),
     vec_p_init = seq_log(1e-4, 0.2, length.out = 50), burn_in = 200, num_iter = Niter,
     use_MLE = FALSE, # for power/convergence issues, alpha
     report_step = 20, ncores = nb_cores(), allow_jump_sign = FALSE, shrink_corr = coef_shrink)
