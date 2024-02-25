@@ -1,4 +1,4 @@
-#' Some renmaing
+#' Some renaming
 #' 
 #' @author Ole SH
 #' 
