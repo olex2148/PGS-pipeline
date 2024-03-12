@@ -232,7 +232,7 @@ cov <- cbind(covariates_df$sex, covariates_df$age, covariates_df$is_2012, pcs)
 
 G <- dosage$genotypes
 
-map_pgs <- df_beta[1:4]; map_pgs$beta <- 1
+map_pgs <- df_beta[, c("chr", "pos", "a0", "a1")]; map_pgs$beta <- 1
 map_pgs2 <- snp_match(map_pgs, dosage$map)
 
 # Compute scores for all individuals in iPSYCH
@@ -251,7 +251,9 @@ scores <- data.frame(family.ID = covariates_df$family.ID,
                      sample.ID = covariates_df$sample.ID, 
                      ldpred2_pgs = pred_auto,
                      lassosum_pgs = pred_lassosum)
-saveRDS(scores, paste0(base_path, "_scores.rds"))
+
+write.table(scores, file = paste0(base_path, "_scores.tbl"), 
+            sep = "\t", row.names = FALSE, append = FALSE, quote = FALSE)
 
 cat("\n Finished computing scores. Models, auto model parameters, foelgefil, and auto + lassosum scores were saved in 4 distinct files in", base_path, "/")
 
