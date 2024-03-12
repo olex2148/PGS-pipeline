@@ -103,8 +103,8 @@ sumstats <- check_frq_col(sumstats, study_info, num_inds)
 # Effective population size ---
 check_n_col_list <- check_n_col(sumstats, study_info, num_inds, foelgefil_df)
 
-sumstats <- check_n_col_list["sumstats"]
-foelgefil_df <- check_n_col_list["foelgefil"]
+sumstats <- check_n_col_list["sumstats"]$sumstats
+foelgefil_df <- check_n_col_list["foelgefil"]$foelgefil
 
 # Making sure its in the sumstats 
 # - otherwise should be added manually
