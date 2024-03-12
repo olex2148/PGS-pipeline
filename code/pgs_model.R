@@ -228,7 +228,9 @@ covariates_df <- dosage$fam %>%
 # Checking order is preserved
 # identical(dosage$fam$sample.ID, covariates_df$sample.ID)
 
-cov <- cbind(covariates_df$sex, covariates_df$age, covariates_df$is_2012, pcs)
+# For restricting to 2015 samples
+# ind_keep <- which(covariates_df$is_2012 == 0)
+# covariates_df <- covariates_df[ind_keep,]
 
 G <- dosage$genotypes
 
@@ -238,11 +240,13 @@ map_pgs2 <- snp_match(map_pgs, dosage$map)
 # Compute scores for all individuals in iPSYCH
 pred_auto <- big_prodVec(G,
                          beta_auto[map_pgs2[["_NUM_ID_.ss"]]] * map_pgs2$beta, # Model
+#                         ind.row = ind_keep, # For restriction to 2015 inds
                          ind.col = map_pgs2[["_NUM_ID_"]], # Indices in G of snps used in auto
                          ncores = nb_cores())
 
 pred_lassosum <- big_prodVec(G,
                              best_lassosum[map_pgs2[["_NUM_ID_.ss"]]] * map_pgs2$beta,
+#                             ind.row = ind_keep, # For restriction to 2015 inds
                              ind.col = map_pgs2[["_NUM_ID_"]], # Indices in G of snps used in auto
                              ncores = nb_cores())
 
@@ -252,7 +256,7 @@ scores <- data.frame(family.ID = covariates_df$family.ID,
                      ldpred2_pgs = pred_auto,
                      lassosum_pgs = pred_lassosum)
 
-write.table(scores, file = paste0(base_path, "_scores.tbl"), 
+write.table(scores, file = paste0(base_path, "_scores.txt"), 
             sep = "\t", row.names = FALSE, append = FALSE, quote = FALSE)
 
 cat("\n Finished computing scores. Models, auto model parameters, foelgefil, and auto + lassosum scores were saved in 4 distinct files in", base_path, "/")
