@@ -158,12 +158,13 @@ if("info" %in% colnames(df_beta)) {
   df_beta <- filter(df_beta, info > 0.7)
 }
 
-df_beta$frq2 <- ifelse(df_beta$beta * sumstats$beta[df_beta$`_NUM_ID_.ss`] < 0,
-                          1 - df_beta$frq, df_beta$frq)
-diff <- with(df_beta, abs(af_UKBB - frq2))
+# TODO: Incorporate this step into QC
+# df_beta$frq2 <- ifelse(df_beta$beta * sumstats$beta[df_beta$`_NUM_ID_.ss`] < 0,
+#                           1 - df_beta$frq, df_beta$frq)
+# diff <- with(df_beta, abs(af_UKBB - frq2))
   
 df_beta$is_bad <- with(df_beta,
-                       diff > 0.05 |
+                      #  diff > 0.05 |
                        sd_ss2 < (0.7 * sd_af) | 
                        sd_ss > (sd_af + 0.1) |
                        sd_ss2 < 0.1 | 
