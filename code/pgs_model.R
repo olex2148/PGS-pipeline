@@ -169,7 +169,7 @@ params <- attr(beta_lassosum, "grid_param")
 scale <- with(df_beta, sqrt(n_eff * beta_se^2 + beta^2))
 beta_hat <- df_beta$beta / scale
 
-pval <- df_beta$p
+pval <- as.numeric(df_beta$p)
 fdr <- fdrtool::fdrtool(df_beta$p, statistic = "pvalue", plot = FALSE)
 beta_hat_shrunk <- beta_hat * (1 - fdr$lfdr)
 
