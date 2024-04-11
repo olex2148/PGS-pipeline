@@ -5,7 +5,7 @@
 
 data("sumstatsColHeaders")
 new_cols <- data.frame("Uncorrected"=c("NCAS",   "NCON", "FCAS",   "EAF_CASES", "FCON", "EAF_CONTROLS", "NEFFDIV2", "IMPINFO", "INFOSCORE", "DIRE", "ALT_ALLELE", "B", "RISK_ALLELE", "OA"),
-                        "Corrected"= c("N_CAS", "N_CON", "FRQ_CAS", "FRQ_CAS", "FRQ_CON", "FRQ_CON",     "NEFF_HALF", "INFO",  "INFO",   "DIRECTION", "A1", "BETA", "A2", "A1"))
+                        "Corrected"= c("N_CAS", "N_CON", "FRQ_CAS", "FRQ_CAS", "FRQ_CON", "FRQ_CON",     "NEFF_HALF", "INFO",  "INFO",   "DIRECTION", "A2", "BETA",        "A1",       "A2"))
 sumstatsColHeaders <- rbind(sumstatsColHeaders,new_cols)
 
 #Once additions are made, order & save the new mapping dataset
