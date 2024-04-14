@@ -182,7 +182,9 @@ p <- qplot(sd_af, sd_ss2, color = is_bad, alpha = I(0.5),
 
 ggsave(paste0(res_folder, "/", base_name, "_QC.jpeg"), p)
 
-df_beta <- df_beta %>% filter(!is_bad) %>% select(-c(is_bad, sd_af, sd_ss, sd_ss2, af_UKBB))
+df_beta <- df_beta %>% 
+  filter(!is_bad) %>% 
+  select(-c(is_bad, sd_af, sd_ss, sd_ss2, af_UKBB))
   
 
 cat(nrow(df_beta), "variants remaining following QC. \n")

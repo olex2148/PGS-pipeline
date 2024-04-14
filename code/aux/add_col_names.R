@@ -3,7 +3,7 @@
 #' # Make additions to sumstatsColHeaders using github version of MungeSumstats-
 #' # shown is an example of adding columns for Standard Error (SE)
 
-data("sumstatsColHeaders")
+load("data/sumstatsColHeaders.rda")
 new_cols <- data.frame("Uncorrected"=c("NCAS",   "NCON", "FCAS",   "EAF_CASES", "FCON", "EAF_CONTROLS", "NEFFDIV2", "IMPINFO", "INFOSCORE", "DIRE", "ALT_ALLELE", "B", "RISK_ALLELE", "OA"),
                         "Corrected"= c("N_CAS", "N_CON", "FRQ_CAS", "FRQ_CAS", "FRQ_CON", "FRQ_CON",     "NEFF_HALF", "INFO",  "INFO",   "DIRECTION", "A2", "BETA",        "A1",       "A2"))
 sumstatsColHeaders <- rbind(sumstatsColHeaders,new_cols)
