@@ -48,6 +48,9 @@ sumstats <- read_sumstats(args[1])
 output_path <- args[2]
 res_folder <- args[3]
 
+# Outputting column names before munging
+colnames(sumstats)
+
 # Removing path and suffix from input str
 base_name <- gsub("_munged.rds", "", basename(output_path))
 
@@ -69,6 +72,15 @@ foelgefil_df <- create_foelgefil(accession_id = accession_id) %>%
          M_Input = nrow(sumstats))
 
 # Standardizing header --------------------------------------------------------------------------------------------------
+# Discarding non-harmonised columns where harmonised version exists
+if ("hm_pos" %in% colnames(sumstats)) {
+  sumstats <- sumstats %>% select(-base_pair_location)
+}
+harmonised_exists <- colnames(sumstats)[which(paste0("hm_", colnames(sumstats)) %in% colnames(sumstats))]
+sumstats <- sumstats %>% 
+  select(-all_of(harmonized_exists))
+colnames(sumstats) <- sub("^hm_", "", colnames(sumstats))
+
 sumstats <- standardise_header(sumstats, mapping_file = sumstatsColHeaders, return_list = FALSE)
 head(sumstats)
 
@@ -82,15 +94,15 @@ if("SNP" %in% colnames(sumstats) & !"RSID" %in% colnames(sumstats)){
   }
 }
 
-if(all(c("SNP", "CHR", "BP") %in% colnames(sumstats))) {  # MungeSumstats needs these three cols to infer ref
-  ref_genome <- get_genome_builds(sumstats_list = list(ss1 = sumstats))$ss1
-  
-  if(ref_genome != "GRCH37") {
-    sumstats <- liftover(sumstats_dt = sumstats,
-                         ref_genome = ref_genome,
-                         convert_ref_genome = "GRCh37")
-  }
-}
+# if(all(c("SNP", "CHR", "BP") %in% colnames(sumstats))) {  # MungeSumstats needs these three cols to infer ref
+#   ref_genome <- get_genome_builds(sumstats_list = list(ss1 = sumstats))$ss1
+#   
+#   if(ref_genome != "GRCH37") {
+#     sumstats <- liftover(sumstats_dt = sumstats,
+#                          ref_genome = ref_genome,
+#                          convert_ref_genome = "GRCh37")
+#   }
+# }
 
 # Some manual checks ---------------------------------------------------------------------------------------------------
 
@@ -101,7 +113,7 @@ sumstats <- snp_match_format(sumstats)
 sumstats <- check_frq_col(sumstats, study_info, num_inds)
 
 # Effective population size ---
-check_n_col_list <- check_n_col(sumstats, study_info, num_inds, foelgefil_df)
+check_n_col_list <- check_n_col(sumstats, num_inds, foelgefil_df)
 
 sumstats <- check_n_col_list["sumstats"]$sumstats
 foelgefil_df <- check_n_col_list["foelgefil"]$foelgefil
@@ -125,7 +137,7 @@ info <- readRDS(runonce::download_file(
   dir = paths$hapmap_path, fname = "map_hm3_plus.rds"))
 
 # Finding sumstats/HapMap3+ overlap
-snp_info <- snp_match(sumstats, info, match.min.prop = 0.1) %>%
+snp_info <- snp_match(sumstats, info, match.min.prop = 0.1, join_by_pos = FALSE) %>%
   select(-c(pos_hg18, pos_hg38))
 
 cat(nrow(snp_info), "variants in overlap with HapMap3+. \n")
@@ -139,6 +151,7 @@ if(!"frq" %in% colnames(snp_info)) {
 foelgefil_df$M_HapMap <-  nrow(snp_info)
 
 # QC -------------------------------------------------------------------------------------------------------------------------------------
+snp_info$p <- as.numeric(snp_info$p)
 if("n_eff" %in% colnames(snp_info)) {
   df_beta <- snp_info %>% 
     filter(beta != 0, beta_se > 0,
@@ -166,8 +179,8 @@ if("info" %in% colnames(df_beta)) {
 df_beta$is_bad <- with(df_beta,
                       #  diff > 0.05 |
                        sd_ss2 < (0.7 * sd_af) | 
-                       sd_ss > (sd_af + 0.1) |
-                       sd_ss2 < 0.1 | 
+                       sd_ss2 > (sd_af + 0.1) |
+                       sd_ss2 < 0.05 | 
                        sd_af < 0.05)
 
 p <- qplot(sd_af, sd_ss2, color = is_bad, alpha = I(0.5),

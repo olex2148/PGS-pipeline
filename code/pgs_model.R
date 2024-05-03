@@ -104,7 +104,7 @@ repeat {
   perc_kept <- length(keep)/50
   cat(length(keep), "chains passed QC \n")
   
-  if(perc_kept >= 0.2) break                       # At least 10 chains should pass QC
+  if(perc_kept >= 0.4) break                       # At least 20 chains should pass QC
   coef_shrink <- coef_shrink - 0.1
   if(coef_shrink < 0.4) break                     # We won't allow a shrinkage coef smaller than 0.4 / TODO: stop instead
   cat("Rerunning \n")
@@ -169,7 +169,7 @@ params <- attr(beta_lassosum, "grid_param")
 scale <- with(df_beta, sqrt(n_eff * beta_se^2 + beta^2))
 beta_hat <- df_beta$beta / scale
 
-fdr <- fdrtool::fdrtool(as.numeric(df_beta$p), statistic = "pvalue", plot = FALSE)
+fdr <- fdrtool::fdrtool(df_beta$p, statistic = "pvalue", plot = FALSE)
 beta_hat_shrunk <- beta_hat * (1 - fdr$lfdr)
 
 params$auto_score <- apply(beta_lassosum, 2, function(beta) {
@@ -224,6 +224,10 @@ covariates_df <- dosage$fam %>%
            "years")) %>% 
   select(-c(paternal.ID, maternal.ID, affection, gender))
 
+# If restricting to 2015 samples
+# ind_keep <- which(covariates_df$is_2012 == 0)
+# covariates_df <- covariates_df[ind_keep,]
+
 # Checking order is preserved
 # identical(dosage$fam$sample.ID, covariates_df$sample.ID)
 
@@ -255,8 +259,8 @@ scores <- data.frame(family.ID = covariates_df$family.ID,
                      ldpred2_pgs = pred_auto,
                      lassosum_pgs = pred_lassosum)
 
-write.table(scores, file = paste0(base_path, "_scores.txt"), 
-            sep = "\t", row.names = FALSE, append = FALSE, quote = FALSE)
+# TODO: Don't save scores as rds
+saveRDS(scores, paste0(base_path, "_scores.rds"))
 
 cat("\n Finished computing scores. Models, auto model parameters, foelgefil, and auto + lassosum scores were saved in 4 distinct files in", base_path, "/")
 

@@ -1,4 +1,4 @@
-check_n_col <- function(sumstats, study_info, num_inds, foelgefil_df){
+check_n_col <- function(sumstats, num_inds, foelgefil_df){
   # Check if frq columns are on the form frq_a_X and frq_u_X (PGC format)
   frq_cas_col <- grep("^fr?q_a_", colnames(sumstats))
   frq_con_col <- grep("^fr?q_u_", colnames(sumstats))
@@ -38,7 +38,7 @@ check_n_col <- function(sumstats, study_info, num_inds, foelgefil_df){
       sumstats <- select(sumstats, -c(n_cas, n_con))
       
       # Otherwise, look up in gwas catalog using gwasrapidd  
-    } else if(!is.na(study_info) & !is.na(num_inds$n_cas)){
+    } else if(!is.na(num_inds$n_cas)){
       sumstats$n_eff = with(num_inds, 4/(1/n_cas + 1/n_con))
       
       # Last resort using numbers from frq_a_cas frq_u_con (PGC)
@@ -53,7 +53,7 @@ check_n_col <- function(sumstats, study_info, num_inds, foelgefil_df){
     
     # Total population size for continuous traits 
     if(!"n" %in% colnames(sumstats) & !"n_eff" %in% colnames(sumstats)) {
-      if(!is.na(study_info) & !is.na(num_inds$n)){
+      if(!is.na(num_inds$n)){
         sumstats$n =  num_inds$n
       }
     }
