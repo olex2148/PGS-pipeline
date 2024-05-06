@@ -1,4 +1,4 @@
-check_n_col <- function(sumstats, num_inds, foelgefil_df){
+check_n_col <- function(sumstats, num_inds, model_info_df){
   # Check if frq columns are on the form frq_a_X and frq_u_X (PGC format)
   frq_cas_col <- grep("^fr?q_a_", colnames(sumstats))
   frq_con_col <- grep("^fr?q_u_", colnames(sumstats))
@@ -20,8 +20,8 @@ check_n_col <- function(sumstats, num_inds, foelgefil_df){
       if("n_cas" %in% colnames(sumstats)){
         
         # Saving the info before deleting
-        foelgefil_df$N_Cases <- mean(sumstats$n_cas)
-        foelgefil_df$N_Controls <- mean(sumstats$n_con)
+        model_info_df$N_Cases <- mean(sumstats$n_cas)
+        model_info_df$N_Controls <- mean(sumstats$n_con)
         
         sumstats <- select(sumstats, -c(n_cas, n_con))
       }
@@ -31,8 +31,8 @@ check_n_col <- function(sumstats, num_inds, foelgefil_df){
       sumstats$n_eff = with(sumstats, 4/(1/n_cas + 1/n_con))
       
       # Saving the info before deleting
-      foelgefil_df$N_Cases <- mean(sumstats$n_cas)
-      foelgefil_df$N_Controls <- mean(sumstats$n_con)
+      model_info_df$N_Cases <- mean(sumstats$n_cas)
+      model_info_df$N_Controls <- mean(sumstats$n_con)
       
       # Then delete cols
       sumstats <- select(sumstats, -c(n_cas, n_con))
@@ -46,8 +46,8 @@ check_n_col <- function(sumstats, num_inds, foelgefil_df){
       sumstats$n_eff = 4/(1/col_cas + 1/col_con)
       
       # Saving the info
-      foelgefil_df$N_Cases <- col_cas
-      foelgefil_df$N_Controls <- col_con
+      model_info_df$N_Cases <- col_cas
+      model_info_df$N_Controls <- col_con
     }
       
     
@@ -59,5 +59,5 @@ check_n_col <- function(sumstats, num_inds, foelgefil_df){
     }
     
   }
-  return(list("sumstats" = sumstats, "foelgefil" = foelgefil_df))
+  return(list("sumstats" = sumstats, "model_info" = model_info_df))
 }

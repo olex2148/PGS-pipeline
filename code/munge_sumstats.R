@@ -34,7 +34,7 @@ suppressPackageStartupMessages({
 paths <- fromJSON(file = "data/paths.json")
 load(paths$col_header)
 source(paths$get_n_function)
-source(paths$create_foelgefil_function)
+source(paths$create_model_info)
 source(paths$or_to_beta_function)
 source(paths$snp_match_names)
 source(paths$z_to_beta_function)
@@ -57,7 +57,7 @@ base_name <- gsub("_munged.rds", "", basename(output_path))
 # Accession ID to find in gwas catalog using gwasrapidd ------------------------------------------------------------------
 accession_id <- str_match(args[1], "accession\\s*(.*?)\\s*_")[,2]
 
-# If accession ID present, use to get info for foelgefil
+# If accession ID present, use to get info for model info
 if(!is.na(accession_id)) {
   study_info <- get_studies(study_id = accession_id)
   num_inds <- get_n_cas_con(study_info@studies$initial_sample_size) # Get number of cases and controls or n from sample size string
@@ -67,7 +67,7 @@ if(!is.na(accession_id)) {
   num_inds <- list("n" = NA, "n_cas" = NA, "n_con" = NA)
 }
 
-foelgefil_df <- create_foelgefil(accession_id = accession_id) %>% 
+model_info_df <- create_model_info(accession_id = accession_id) %>% 
   mutate(ID = base_name,
          M_Input = nrow(sumstats))
 
@@ -113,10 +113,10 @@ sumstats <- snp_match_format(sumstats)
 sumstats <- check_frq_col(sumstats, study_info, num_inds)
 
 # Effective population size ---
-check_n_col_list <- check_n_col(sumstats, num_inds, foelgefil_df)
+check_n_col_list <- check_n_col(sumstats, num_inds, model_info_df)
 
 sumstats <- check_n_col_list["sumstats"]$sumstats
-foelgefil_df <- check_n_col_list["foelgefil"]$foelgefil
+model_info_df <- check_n_col_list["model_info"]$model_info
 
 # Making sure its in the sumstats 
 # - otherwise should be added manually
@@ -147,8 +147,8 @@ if(!"frq" %in% colnames(snp_info)) {
   snp_info$frq = snp_info$af_UKBB
 }
 
-# Saving in foelgefil
-foelgefil_df$M_HapMap <-  nrow(snp_info)
+# Saving in model info
+model_info_df$M_HapMap <-  nrow(snp_info)
 
 # QC -------------------------------------------------------------------------------------------------------------------------------------
 snp_info$p <- as.numeric(snp_info$p)
@@ -217,8 +217,8 @@ assert("Less than 60K variants remaining in summary statistics following QC and 
        nrow(df_beta) > 10000)
 cat(nrow(df_beta), "variants remaining after restricting to iPSYCH variants. \n")
 
-# Saving in foelgefil
-foelgefil_df$M_QC <- nrow(df_beta)
+# Saving in model info
+model_info_df$M_QC <- nrow(df_beta)
 
 # Saving the parsed sumstats in the outputfile ---------------------------------------------------------------------------
 head(df_beta)
@@ -226,7 +226,7 @@ saveRDS(df_beta, output_path)
 
 # saveRDS(df_beta, paths$test_parsed) # for testing
 
-# Saving foelgefil --------------------------------------------------------------------------------------------------------
-write.table(foelgefil_df,
-           file = paste0(res_folder, "/", base_name, "_foelgefil.csv"),
+# Saving model info --------------------------------------------------------------------------------------------------------
+write.table(model_info_df,
+           file = paste0(res_folder, "/", base_name, "_model_info.csv"),
            sep = "\t", row.names = FALSE, append = FALSE, quote = FALSE)

@@ -5,7 +5,7 @@
 #' 
 #' @description This script takes two arguments: An input file of parsed sumstats
 #' (output of parser.R) as well as a base name for the output  files - as there are several
-#' (models, scores, figures, foelgefil)
+#' (models, scores, figures, model info)
 #' 
 #' @Todo
 
@@ -24,7 +24,7 @@ suppressPackageStartupMessages({
 args = commandArgs(trailingOnly = TRUE)
 munged_sumstats <- args[1]
 base_path <- args[2]
-foelgefil <- args[3]
+model_info <- args[3]
 
 base_name <- gsub(".rds", "", basename(base_path))
 
@@ -106,7 +106,10 @@ repeat {
   
   if(perc_kept >= 0.4) break                       # At least 20 chains should pass QC
   coef_shrink <- coef_shrink - 0.1
-  if(coef_shrink < 0.4) break                     # We won't allow a shrinkage coef smaller than 0.4 / TODO: stop instead
+  if(coef_shrink < 0.4) { # We won't allow a shrinkage coef smaller than 0.4
+    #TODO: fail or report "best chain" ?
+    break
+  }                      
   cat("Rerunning \n")
 }
 
@@ -187,23 +190,34 @@ best_lassosum <- params %>%
   pull(id) %>% 
   beta_lassosum[, .]
 
-# Saving the raw models                 
+# Saving the raw models and results statistics -----------------------------------------------------------------------------
 saveRDS(list(ldsc = ldsc, ldpred2 = multi_auto, shrinkage_coef = coef_shrink, lassosum = beta_lassosum),
         paste0(base_path, "_raw_models.rds"))
 
-# Adding metrics to foelgefil
-foelgefil_df <- read.csv(foelgefil, sep = "\t")
+# Adding metrics to model info
+model_info_df <- read.csv(model_info, sep = "\t")
 
-foelgefil_df$h2_init <- h2_init
-foelgefil_df$h2_auto <- quant_h2[1]
-foelgefil_df$h2_2.5 <- quant_h2[2]
-foelgefil_df$h2_97.5 <- quant_h2[3]
-foelgefil_df$p2_auto <- quant_p[1]
-foelgefil_df$p_2.5 <- quant_p[2]
-foelgefil_df$p_97.5 <- quant_p[3]
+model_info_df$h2_init <- h2_init
+model_info_df$h2_auto <- quant_h2[1]
+model_info_df$h2_2.5 <- quant_h2[2]
+model_info_df$h2_97.5 <- quant_h2[3]
+model_info_df$h2_median <- median(all_h2)
+model_info_df$p_auto <- quant_p[1]
+model_info_df$p_2.5 <- quant_p[2]
+model_info_df$p_97.5 <- quant_p[3]
+model_info_df$p_median <- median(all_p)
+model_info_df$n_chains <- length(keep)
+model_info_df$r2_median <- median(all_r2)
+model_info_df$range_median <- median(range[keep])
+model_info_df$shrinkage <- coef_shrink
+model_info_df$ldsc_intercept <- ldsc[1]
+model_info_df$n_eff <- 4 / (1 / N_cases + 1 / N_controls)
+model_info_df$n_eff_beta_se_est <- quantile(8 / df_beta$beta_se^2, 0.999)
+
+
   
-write.table(foelgefil_df,
-            file = foelgefil, sep = "\t",
+write.table(model_info_df,
+            file = model_info, sep = "\t",
             row.names = FALSE, append = FALSE, quote = FALSE)
   
 # Predicting in iPSYCH ------------------------------------------------------------------------------------------------------
@@ -262,7 +276,7 @@ scores <- data.frame(family.ID = covariates_df$family.ID,
 # TODO: Don't save scores as rds
 saveRDS(scores, paste0(base_path, "_scores.rds"))
 
-cat("\n Finished computing scores. Models, auto model parameters, foelgefil, and auto + lassosum scores were saved in 4 distinct files in", base_path, "/")
+cat("\n Finished computing scores. Models, auto model parameters, model info, and auto + lassosum scores were saved in 4 distinct files in", base_path, "/")
 
 # Deleting corr file to save space
 file.remove(paste0(tmp, ".sbk"))

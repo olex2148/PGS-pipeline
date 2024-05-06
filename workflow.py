@@ -21,7 +21,7 @@ paths = json.load(open('data/paths.json'))
 ### Defining gwf templates
 def munge_sumstats(inputfile):
 	'''
-	Template for running the r script "prepare_and_parse_sumstats.R" which parses GWAS summary statistics
+	Template for running the r script "munge_sumstats.R" which munges GWAS summary statistics and performs quality control
 	'''
 
 	# Name of folder to be created in steps and results
@@ -61,33 +61,33 @@ def munge_sumstats(inputfile):
 
 def compute_pgs(inputfile):
 	'''
-	Template for running the r script "pgs_model.R" which computes PGS models using parsed sumstats
+	Template for running the r script "pgs_model.R" which computes PGS models using munged sumstats
 	'''
 	# Name of folder to be created in steps and results
 	folder_name = os.path.split(inputfile)[0].split("/")[-1]
 
 	base_name = modpath(inputfile, parent=(''), suffix=('_munged.rds', ''))             # Getting the base name from the inputfile 
 	output_path = f'results/{folder_name}/{base_name}/{base_name}'                      # New path with sumstat-specific folder (and filename without suffix)
-	foelgefil = f'{output_path}_foelgefil.csv'
+	model_info = f'{output_path}_model_info.csv'
 
 	working_dir = paths['work_dir']
-	inputs = {'parsed_sumstats': inputfile}
+	inputs = {'munged_sumstats': inputfile}
 	outputs = {
 		'models': f'{output_path}_raw_models.rds', 
 		'scores': f'{output_path}_scores.rds', 
-		'autoparamters': f'{output_path}_auto_parameters.rds',
-		'foelgefil': foelgefil
+		'auto_parameters': f'{output_path}_auto_parameters.rds',
+		'model_info': model_info
 	}
 	options = {
 		'memory': '40g',
-		'walltime': '06:00:00',
+		'walltime': '12:00:00',
 		'cores': '23',
 		'account': 'NCRR-PRS'
 	}
 
 	spec = f'''
 
-	Rscript code/pgs_model.R {inputfile} {output_path} {foelgefil}
+	Rscript code/pgs_model.R {inputfile} {output_path} {model_info}
 	
 	'''
 	
@@ -95,12 +95,12 @@ def compute_pgs(inputfile):
 
 def concat_files(paths):
   folder_name = os.path.split(paths[0])[0].split('/')[-2]
-  output_path = f'results/{folder_name}/{folder_name}_foelgefil.csv'
+  output_path = f'results/{folder_name}/{folder_name}_model_info.csv'
   list_str = ' '.join(paths)
   command_string = "awk 'FNR == 1 && NR != 1 {next} {print}'"
   
   inputs = {'paths': paths}
-  outputs = {'concatenated_foelgefil': output_path}
+  outputs = {'concatenated_model_info': output_path}
   options = {
     'memory': '2g',
     'walltime': '00:05:00'
@@ -122,19 +122,19 @@ def get_munge_name(idx, target):
   return f'munge_{filename}'
 
 def get_pgs_name(idx, target):
-  filename = modpath(target.inputs['parsed_sumstats'], parent='', suffix=('_munged.rds', ''))
+  filename = modpath(target.inputs['munged_sumstats'], parent='', suffix=('_munged.rds', ''))
   return f'ldpred2_{filename}'
 
 # Input
 sumstats = gwf.glob(paths['sumstat_folder'])
 
 # Mapping over the inputs
-parse_sumstats = gwf.map(munge_sumstats, sumstats, name=get_munge_name)
-compute_scores = gwf.map(compute_pgs, parse_sumstats.outputs, name=get_pgs_name)
+munge_sumstats = gwf.map(munge_sumstats, sumstats, name=get_munge_name)
+compute_pgs = gwf.map(compute_pgs, munge_sumstats.outputs, name=get_pgs_name)
 
 gwf.target_from_template(
-  name='concatenate_foelgefiler',
+  name='concatenate_model_info',
   template=concat_files(
-    paths=collect(compute_scores.outputs, ['foelgefil'])['foelgefils']
+    paths=collect(compute_pgs.outputs, ['model_info'])['model_infos']
   )
 )
