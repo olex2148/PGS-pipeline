@@ -33,13 +33,13 @@ suppressPackageStartupMessages({
 # Input and output -------------------------------------------------------------------------------------------------------
 paths <- fromJSON(file = "data/paths.json")
 load(paths$col_header)
-source(paths$get_n_function)
+source(paths$get_n)
 source(paths$create_model_info)
-source(paths$or_to_beta_function)
-source(paths$snp_match_names)
-source(paths$z_to_beta_function)
-source(paths$frq_col_function)
-source(paths$n_col_function)
+source(paths$or_to_beta)
+source(paths$snp_match_format)
+source(paths$z_to_beta)
+source(paths$frq_col)
+source(paths$n_col)
 # sumstats = read_sumstats(paths$test_path) # For testing
 
 # Command line arguments for this script
