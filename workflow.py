@@ -123,7 +123,7 @@ def get_munge_name(idx, target):
 
 def get_pgs_name(idx, target):
   filename = modpath(target.inputs['munged_sumstats'], parent='', suffix=('_munged.rds', ''))
-  return f'ldpred2_{filename}'
+  return f'pgs_{filename}'
 
 # Input
 sumstats = gwf.glob(paths['sumstat_folder'])
