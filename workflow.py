@@ -13,7 +13,7 @@ import os, json
 from gwf import Workflow, AnonymousTarget
 from gwf.workflow import collect
 from datetime import date
-from code.aux.modpath import modpath
+from code.functions.modpath import modpath
 
 gwf = Workflow()
 paths = json.load(open('data/paths.json'))
