@@ -72,11 +72,11 @@ model_info_df <- create_model_info(accession_id = accession_id) %>%
          M_Input = nrow(sumstats))
 
 # Standardizing header --------------------------------------------------------------------------------------------------
-# Discarding non-harmonised columns where harmonised version exists
+# Discarding non-harmonized columns where harmonized version exists
 if ("hm_pos" %in% colnames(sumstats)) {
   sumstats <- sumstats %>% select(-base_pair_location)
 }
-harmonised_exists <- colnames(sumstats)[which(paste0("hm_", colnames(sumstats)) %in% colnames(sumstats))]
+harmonized_exists <- colnames(sumstats)[which(paste0("hm_", colnames(sumstats)) %in% colnames(sumstats))]
 sumstats <- sumstats %>% 
   select(-all_of(harmonized_exists))
 colnames(sumstats) <- sub("^hm_", "", colnames(sumstats))
