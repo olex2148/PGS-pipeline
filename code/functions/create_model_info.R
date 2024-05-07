@@ -29,7 +29,7 @@ create_model_info <- function(accession_id){
         first_author = study_info@publications$author_fullname,
         journal = study_info@publications$publication,
         title = study_info@publications$title,
-        publication_date = study_info@publications$publication_date
+        publication_date = as.Date(study_info@publications$publication_date, origin = "1970-01-01")
       )
     
     if(!is.na(num_inds$n)){
