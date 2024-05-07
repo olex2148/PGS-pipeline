@@ -211,7 +211,7 @@ model_info_df$r2_median <- median(all_r2)
 model_info_df$range_median <- median(range[keep])
 model_info_df$shrinkage <- coef_shrink
 model_info_df$ldsc_intercept <- ldsc[1]
-model_info_df$n_eff <- 4 / (1 / N_cases + 1 / N_controls)
+model_info_df$n_eff <- 4 / (1 / n_cases + 1 / n_controls)
 model_info_df$n_eff_beta_se_est <- quantile(8 / df_beta$beta_se^2, 0.999)
 
 
