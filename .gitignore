@@ -4,3 +4,4 @@
 .Ruserdata
 PGS-pipeline.Rproj
 data/paths.json
+data/summary_statistics_table_export.tsv

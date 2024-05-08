@@ -60,7 +60,7 @@ accession_id <- str_match(args[1], "accession\\s*(.*?)\\s*_")[,2]
 # If accession ID present, use to get info for model info
 if(!is.na(accession_id)) {
   study_info <- get_studies(study_id = accession_id)
-  num_inds <- get_n_cas_con(study_info@studies$initial_sample_size) # Get number of cases and controls or n from sample size string
+  num_inds <- get_n(study_info@studies$initial_sample_size) # Get number of cases and controls or n from sample size string
   
 } else {
   study_info <- NA

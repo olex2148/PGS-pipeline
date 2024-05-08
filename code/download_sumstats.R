@@ -5,8 +5,18 @@ library(dplyr)
 library(stringr)
 library(readr)
 library(bigreadr)
+# 
+# paths <- fromJSON(file = "data/paths.json")
+# source(paths$get_n)
+# source("code\\functions\\get_n.R")
 
-gwascatalog <- bigreadr::fread2("summary_statistics_table_export.tsv")
+
+
+runonce::download_file("https://www.ebi.ac.uk/gwas/api/v2/summaryStatistics/studies/download",
+                       "data/",
+                       "summary_statistics_table_export.tsv",
+                       overwrite = TRUE)
+gwascatalog <- bigreadr::fread2("data/summary_statistics_table_export.tsv")
 gwascatalog$publicationDate <- as.Date(gwascatalog$publicationDate)
 
 extract_european_sample_size <- function(text) {
@@ -16,6 +26,13 @@ extract_european_sample_size <- function(text) {
   as.numeric(number)
 }
 
+with_NAs <- function(a, b, exp) {
+  if (!(is.na(a) || is.na(b))) {
+    exp(a, b)
+  } else NA
+}
+
+
 gwascatalog$europeanSampleSize <- sapply(gwascatalog$discoverySampleAncestry, extract_european_sample_size)
 
 filtered_gwascatalog <- gwascatalog %>%
@@ -24,6 +41,17 @@ filtered_gwascatalog <- gwascatalog %>%
   filter(associationCount > 0) %>% 
   filter(!(genotypingTechnologies %in% 
              c("Exome genotyping array", "Exome genotyping array,Exome-wide sequencing")))
+
+sample_size <- t(sapply(filtered_gwascatalog$initialSampleDescription, get_n))
+rownames(sample_size) <- NULL
+sample_size <- data.frame(sample_size)
+filtered_gwascatalog <- filtered_gwascatalog %>% mutate(n_cont = apply(sample_size, 1, function(row) with_NAs(row[["n"]], 0, exp = function(a, b) a)),
+                                                        n_cas = apply(sample_size, 1, function(row) with_NAs(row[["n_cas"]], 0, exp = function(a, b) a)),
+                                                        n_con = apply(sample_size, 1, function(row) with_NAs(row[["n_con"]], 0, exp = function(a, b) a)),
+                                                        n_cc = apply(sample_size, 1, function(row) with_NAs(row[["n_cas"]], row[["n_con"]], exp = function(a, b) a + b)),
+                                                        n_eff = apply(sample_size, 1, function(row) with_NAs(row[["n_cas"]], row[["n_con"]], exp = function(a, b) 4 / (1 / a + 1 / b))))
+
+
 
 urls <- filtered_gwascatalog$summaryStatistics
 

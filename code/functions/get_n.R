@@ -1,15 +1,15 @@
 #' Split gwasrapidd initial_sample_size strings into cases and controls
 #' 
 
-get_n_cas_con <- function(initial_sample_size_str) {
+get_n <- function(initial_sample_size_str) {
   require(stringr)
   
   # Removing commas in the numbers
   sample_size_str <- gsub("(\\d),(\\d)", "\\1\\2", initial_sample_size_str)
   
   # Split the string into parts
-  parts <- unlist(strsplit(sample_size_str, "(,\\s*\\d)", perl = TRUE))
-  
+  parts <- unlist(strsplit(sample_size_str, ",", perl = TRUE))
+
   # Initialize
   sum_cases <- sum_controls <- sum_inds <- 0
   
