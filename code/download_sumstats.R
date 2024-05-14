@@ -5,12 +5,9 @@ library(dplyr)
 library(stringr)
 library(readr)
 library(bigreadr)
-# 
-# paths <- fromJSON(file = "data/paths.json")
-# source(paths$get_n)
-# source("code\\functions\\get_n.R")
 
-
+paths <- fromJSON(file = "data/paths.json")
+source(paths$get_n)
 
 runonce::download_file("https://www.ebi.ac.uk/gwas/api/v2/summaryStatistics/studies/download",
                        "data/",
@@ -32,26 +29,33 @@ with_NAs <- function(a, b, exp) {
   } else NA
 }
 
-
 gwascatalog$europeanSampleSize <- sapply(gwascatalog$discoverySampleAncestry, extract_european_sample_size)
 
 filtered_gwascatalog <- gwascatalog %>%
   filter(publicationDate >= as.Date("2014-01-01")) %>%
-  filter(!is.na(europeanSampleSize) & europeanSampleSize > 20000) %>% 
-  filter(associationCount > 0) %>% 
+  filter(!is.na(europeanSampleSize) & europeanSampleSize > 10000) %>%
+  filter(associationCount > 0) %>%
   filter(!(genotypingTechnologies %in% 
              c("Exome genotyping array", "Exome genotyping array,Exome-wide sequencing")))
 
-sample_size <- t(sapply(filtered_gwascatalog$initialSampleDescription, get_n))
-rownames(sample_size) <- NULL
-sample_size <- data.frame(sample_size)
-filtered_gwascatalog <- filtered_gwascatalog %>% mutate(n_cont = apply(sample_size, 1, function(row) with_NAs(row[["n"]], 0, exp = function(a, b) a)),
-                                                        n_cas = apply(sample_size, 1, function(row) with_NAs(row[["n_cas"]], 0, exp = function(a, b) a)),
-                                                        n_con = apply(sample_size, 1, function(row) with_NAs(row[["n_con"]], 0, exp = function(a, b) a)),
-                                                        n_cc = apply(sample_size, 1, function(row) with_NAs(row[["n_cas"]], row[["n_con"]], exp = function(a, b) a + b)),
-                                                        n_eff = apply(sample_size, 1, function(row) with_NAs(row[["n_cas"]], row[["n_con"]], exp = function(a, b) 4 / (1 / a + 1 / b))))
+filtered_gwascatalog$n_cont <-
+  filtered_gwascatalog$n_cas <-
+  filtered_gwascatalog$n_con <-
+  filtered_gwascatalog$n_total_bin <- 
+  filtered_gwascatalog$n_eff_bin <- NA
 
 
+for (i in seq(nrow(filtered_gwascatalog))) {
+  parsed <- get_n(filtered_gwascatalog[i, ]["initialSampleDescription"], filtered_gwascatalog[i, ]["replicateSampleDescription"])
+  n <- unlist(parsed["n"])
+  n_cas <- unlist(parsed["n_cas"])
+  n_con <- unlist(parsed["n_con"])
+  filtered_gwascatalog[i, ]$n_cont <- n
+  filtered_gwascatalog[i, ]$n_cas <- n_cas
+  filtered_gwascatalog[i, ]$n_con <- n_con
+  filtered_gwascatalog[i, ]$n_total_bin <- with_NAs(n_cas, n_con, function (a, b) a+b)
+  filtered_gwascatalog[i, ]$n_eff_bin <- with_NAs(n_cas, n_con, function (a, b) 4 / (1 / b + 1 / b)) 
+}
 
 urls <- filtered_gwascatalog$summaryStatistics
 
@@ -75,6 +79,7 @@ sumstats <- data.frame(
   url = fetched$url[which(matches > 0)],
   filename = regmatches(fetched$content, matches)
 )
+sumstats_metadata <- filtered_gwascatalog[which(matches > 0), ]
 
 options(timeout=3600)
 for (i in seq_along(sumstats$url[1:length(seq_along(sumstats$url))])) {

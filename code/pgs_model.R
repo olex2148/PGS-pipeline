@@ -107,7 +107,6 @@ repeat {
   if(perc_kept >= 0.4) break                       # At least 20 chains should pass QC
   coef_shrink <- coef_shrink - 0.1
   if(coef_shrink < 0.4) { # We won't allow a shrinkage coef smaller than 0.4
-    #TODO: fail or report "best chain" ?
     break
   }                      
   cat("Rerunning \n")
