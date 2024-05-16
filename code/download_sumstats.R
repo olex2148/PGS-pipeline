@@ -54,7 +54,7 @@ for (i in seq(nrow(filtered_gwascatalog))) {
   filtered_gwascatalog[i, ]$n_cas <- n_cas
   filtered_gwascatalog[i, ]$n_con <- n_con
   filtered_gwascatalog[i, ]$n_total_bin <- with_NAs(n_cas, n_con, function (a, b) a+b)
-  filtered_gwascatalog[i, ]$n_eff_bin <- with_NAs(n_cas, n_con, function (a, b) 4 / (1 / b + 1 / b)) 
+  filtered_gwascatalog[i, ]$n_eff_bin <- with_NAs(n_cas, n_con, function (a, b) 4 / (1 / a + 1 / b)) 
 }
 
 urls <- filtered_gwascatalog$summaryStatistics
