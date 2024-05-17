@@ -72,6 +72,7 @@ sumstats <- data.frame(
   filename = regmatches(fetched$content, matches)
 )
 sumstats_metadata <- filtered_gwascatalog[which(matches > 0), ]
+saveRDS(sumstats_metadata, "data/sumstats_metadata.rds")
 
 options(timeout=3600)
 for (i in seq_along(sumstats$url[1:length(seq_along(sumstats$url))])) {

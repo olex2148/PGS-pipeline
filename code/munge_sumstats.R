@@ -26,7 +26,7 @@ suppressPackageStartupMessages({
   library(testit)
   library(ggplot2)
   library(rjson)
-  library(gwasrapidd)
+  # library(gwasrapidd)
   library(stringr)
 })
 
@@ -59,12 +59,18 @@ accession_id <- str_match(args[1], "accession\\s*(.*?)\\s*_")[,2]
 
 # If accession ID present, use to get info for model info
 if(!is.na(accession_id)) {
-  study_info <- get_studies(study_id = accession_id)
-  sample_size <- get_sample_size(study_info@studies$initial_sample_size, study_info@studies$replication_sample_size) # Get number of cases and controls or n from sample size string
+  
+  model_info_df <- create_model_info(accession_id = accession_id) %>% 
+    mutate(ID = base_name,
+           M_Input = nrow(sumstats))
+  
+  #study_info <- get_studies(study_id = accession_id)
+  #sample_size <- get_sample_size(study_info@studies$initial_sample_size, study_info@studies$replication_sample_size) # Get number of cases and controls or n from sample size string
+  sample_size <- list("n" = model_info_df$n, "n_cas" = model_info_df$n_cas, "n_con" = model_info_df$n_con, "n_eff" = model_info_df$n_eff)
   
 } else {
   study_info <- NA
-  sample_size <- list("n" = NA, "n_cas" = NA, "n_con" = NA, "n_eff" = NA, "n_bin" = NA)
+  sample_size <- list("n" = NA, "n_cas" = NA, "n_con" = NA, "n_eff" = NA)
 }
 
 model_info_df <- create_model_info(accession_id = accession_id) %>% 
