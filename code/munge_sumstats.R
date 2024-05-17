@@ -119,7 +119,7 @@ assert("Less than 500K variants in initial summary statistic",
 sumstats <- snp_match_format(sumstats)
 
 # Allele frequency --
-sumstats <- check_frq(sumstats, study_info, sample_size)
+sumstats <- check_frq(sumstats, sample_size)
 
 # Effective population size ---
 check_n_eff_res <- check_n_eff(sumstats, sample_size, model_info_df)
