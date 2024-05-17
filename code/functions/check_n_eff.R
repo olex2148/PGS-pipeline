@@ -1,4 +1,4 @@
-check_n_col <- function(sumstats, sample_size, model_info_df){
+check_n_eff <- function(sumstats, sample_size, model_info_df){
   col_cas <- as.numeric(str_extract(colnames(sumstats)[frq_cas], "\\d+"))
   col_con <- as.numeric(str_extract(colnames(sumstats)[frq_con], "\\d+"))
 

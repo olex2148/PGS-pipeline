@@ -9,7 +9,7 @@
 #' 
 #' @returns sumstats with frq col
 
-check_frq_col <- function(sumstats, sample_size){
+check_frq <- function(sumstats, sample_size){
   # Check if frq columns are on the form frq_a_X and frq_u_X (PGC format)
   frq_cas_col <- grep("^fr?q_a_", colnames(sumstats))
   frq_con_col <- grep("^fr?q_u_", colnames(sumstats))
