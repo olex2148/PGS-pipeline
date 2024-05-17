@@ -76,7 +76,7 @@ sumstats_metadata <- filtered_gwascatalog[which(matches > 0), ]
 options(timeout=3600)
 for (i in seq_along(sumstats$url[1:length(seq_along(sumstats$url))])) {
   url <- paste0(sumstats$url[i], sumstats$filename[i])
-  dir <- file.path("<INSERT PATH HERE>")
+  dir <- file.path("data/sumstats/gwascatalog")
   fname <- paste0("accession", (regmatches(sumstats$filename[i], regexpr("GCST\\d+", sumstats$filename[i]))), "_.gz")
   runonce::download_file(url, dir, fname, overwrite = FALSE)
   cat(paste0(i, "/", nrow(sumstats), "\n"))
