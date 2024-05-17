@@ -31,7 +31,7 @@ suppressPackageStartupMessages({
 })
 
 # Input and output -------------------------------------------------------------------------------------------------------
-paths <- fromJSON(file = "data/paths.json")
+paths <- rjson::fromJSON(file = "data/paths.json")
 load(paths$col_header)
 source(paths$get_n)
 source(paths$create_model_info)

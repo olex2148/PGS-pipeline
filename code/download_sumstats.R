@@ -5,8 +5,9 @@ library(dplyr)
 library(stringr)
 library(readr)
 library(bigreadr)
+library(rjson)
 
-paths <- fromJSON(file = "data/paths.json")
+paths <- rjson::fromJSON(file = "data/paths.json")
 source(paths$get_n)
 
 runonce::download_file("https://www.ebi.ac.uk/gwas/api/v2/summaryStatistics/studies/download",
