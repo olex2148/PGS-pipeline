@@ -23,12 +23,6 @@ extract_european_sample_size <- function(text) {
   as.numeric(number)
 }
 
-with_NAs <- function(a, b, exp) {
-  if (!(is.na(a) || is.na(b))) {
-    exp(a, b)
-  } else NA
-}
-
 gwascatalog$europeanSampleSize <- sapply(gwascatalog$discoverySampleAncestry, extract_european_sample_size)
 
 filtered_gwascatalog <- gwascatalog %>%
@@ -47,14 +41,11 @@ filtered_gwascatalog$n_cont <-
 
 for (i in seq(nrow(filtered_gwascatalog))) {
   parsed <- get_n(filtered_gwascatalog[i, ]["initialSampleDescription"], filtered_gwascatalog[i, ]["replicateSampleDescription"])
-  n <- unlist(parsed["n"])
-  n_cas <- unlist(parsed["n_cas"])
-  n_con <- unlist(parsed["n_con"])
-  filtered_gwascatalog[i, ]$n_cont <- n
-  filtered_gwascatalog[i, ]$n_cas <- n_cas
-  filtered_gwascatalog[i, ]$n_con <- n_con
-  filtered_gwascatalog[i, ]$n_total_bin <- with_NAs(n_cas, n_con, function (a, b) a+b)
-  filtered_gwascatalog[i, ]$n_eff_bin <- with_NAs(n_cas, n_con, function (a, b) 4 / (1 / a + 1 / b)) 
+  filtered_gwascatalog[i, ]$n_cont <- unlist(parsed["n"])
+  filtered_gwascatalog[i, ]$n_cas <- unlist(parsed["n_cas"])
+  filtered_gwascatalog[i, ]$n_con <- unlist(parsed["n_con"])
+  filtered_gwascatalog[i, ]$n_eff <- unlist(parsed["n_eff"])
+  filtered_gwascatalog[i, ]$n_bin <- unlist(parsed["n_bin"])
 }
 
 urls <- filtered_gwascatalog$summaryStatistics

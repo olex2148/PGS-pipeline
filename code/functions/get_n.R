@@ -1,7 +1,7 @@
 #' Split gwasrapidd initial_sample_size strings into cases and controls
 #' 
 
-get_n <- function(initial_sample_size_str, replication_sample_size_str) {
+get_sample_size <- function(initial_sample_size_str, replication_sample_size_str) {
   require(stringr)
   
   parse <- function(sample_size_str) {
@@ -24,15 +24,19 @@ get_n <- function(initial_sample_size_str, replication_sample_size_str) {
         sum_inds <- sum_inds + as.numeric(gsub("[^0-9]", "", part))
       }
     }
-    n_cas <- ifelse(sum_cases == 0, NA, sum_cases)
-    n_con <- ifelse(sum_controls == 0, NA, sum_controls)
-    n <- ifelse(sum_inds == 0, NA, sum_inds)
     
-    return(list("n" = n, "n_cas" = n_cas, "n_con" = n_con))
+    return(list("n" = sum_inds, "n_cas" = sum_cases, "n_con" = sum_controls))
   }
   
   initial <- parse(initial_sample_size_str)
   replication <- parse(replication_sample_size_str)
   
-
+  n <- initial["n"] + replication["n"]
+  n_cas <- initial["n_cas"] + replication["n_cas"]
+  n_con <- initial["n_con"] + replication["n_con"]
+  n_eff <- 4 / (1 / n_cas + 1 / n_con)
+  n_bin <- n_cas + n_con
+  
+  res <- list("n" = n, "n_cas" = n_cas, "n_con" = n_con, "n_eff" = n_eff, "n_bin" = n_bin)
+  return(lapply(res, function(elem) ifelse(elem == 0, NA, elem)))
 }

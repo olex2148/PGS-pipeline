@@ -60,11 +60,11 @@ accession_id <- str_match(args[1], "accession\\s*(.*?)\\s*_")[,2]
 # If accession ID present, use to get info for model info
 if(!is.na(accession_id)) {
   study_info <- get_studies(study_id = accession_id)
-  num_inds <- get_n(study_info@studies$initial_sample_size, study_info@studies$replication_sample_size) # Get number of cases and controls or n from sample size string
+  sample_size <- get_n(study_info@studies$initial_sample_size, study_info@studies$replication_sample_size) # Get number of cases and controls or n from sample size string
   
 } else {
   study_info <- NA
-  num_inds <- list("n" = NA, "n_cas" = NA, "n_con" = NA)
+  sample_size <- list("n" = NA, "n_cas" = NA, "n_con" = NA, "n_eff" = NA, "n_bin" = NA)
 }
 
 model_info_df <- create_model_info(accession_id = accession_id) %>% 
@@ -113,13 +113,17 @@ assert("Less than 500K variants in initial summary statistic",
 sumstats <- snp_match_format(sumstats)
 
 # Allele frequency --
-sumstats <- check_frq_col(sumstats, study_info, num_inds)
+sumstats <- check_frq_col(sumstats, study_info, sample_size)
 
 # Effective population size ---
-check_n_col_list <- check_n_col(sumstats, num_inds, model_info_df)
+check_n_col_list <- check_n_col(sumstats, sample_size, model_info_df)
 
 sumstats <- check_n_col_list["sumstats"]$sumstats
 model_info_df <- check_n_col_list["model_info"]$model_info
+
+# Deleting columns no longer needed
+delete <- c("frq_cas", "frq_con", "n_cas", "n_con", "neff_half")
+sumstats <- select(sumstats -delete[which(delete %in% colnames(sumstats))])
 
 # Making sure its in the sumstats 
 # - otherwise should be added manually
@@ -217,7 +221,7 @@ df_beta <- df_beta[in_test, ]
 
 # Making sure there is not no variants in sumstats ----------------------------------------------------------------------
 assert("Less than 60K variants remaining in summary statistics following QC and Hapmap3+/iPSYCH overlap.",
-       nrow(df_beta) > 10000) #TODO: 60K or 10K?
+       nrow(df_beta) > 60000)
 cat(nrow(df_beta), "variants remaining after restricting to iPSYCH variants. \n")
 
 # Saving in model info
