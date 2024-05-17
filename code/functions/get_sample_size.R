@@ -31,9 +31,9 @@ get_sample_size <- function(initial_sample_size_str, replication_sample_size_str
   initial <- parse(initial_sample_size_str)
   replication <- parse(replication_sample_size_str)
   
-  n <- initial["n"] + replication["n"]
-  n_cas <- initial["n_cas"] + replication["n_cas"]
-  n_con <- initial["n_con"] + replication["n_con"]
+  n <- initial$n + replication$n
+  n_cas <- initial$n_cas + replication$n_cas
+  n_con <- initial$n_con + replication$n_con
   n_eff <- 4 / (1 / n_cas + 1 / n_con)
   n_bin <- n_cas + n_con
   

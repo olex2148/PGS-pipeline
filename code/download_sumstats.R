@@ -19,7 +19,7 @@ gwascatalog$publicationDate <- as.Date(gwascatalog$publicationDate)
 
 extract_european_sample_size <- function(text) {
   if (is.na(text)) return(NA)
-  number <- str_extract(text, "\\d+(?= European)")
+  number <- stringr::str_extract(text, "\\d+(?= European)")
   if (is.na(number)) return(NA)
   as.numeric(number)
 }
@@ -36,17 +36,17 @@ filtered_gwascatalog <- gwascatalog %>%
 filtered_gwascatalog$n_cont <-
   filtered_gwascatalog$n_cas <-
   filtered_gwascatalog$n_con <-
-  filtered_gwascatalog$n_total_bin <- 
-  filtered_gwascatalog$n_eff_bin <- NA
+  filtered_gwascatalog$n_eff <- 
+  filtered_gwascatalog$n_bin <- NA
 
 
 for (i in seq(nrow(filtered_gwascatalog))) {
   parsed <- get_sample_size(filtered_gwascatalog[i, ]["initialSampleDescription"], filtered_gwascatalog[i, ]["replicateSampleDescription"])
-  filtered_gwascatalog[i, ]$n_cont <- unlist(parsed["n"])
-  filtered_gwascatalog[i, ]$n_cas <- unlist(parsed["n_cas"])
-  filtered_gwascatalog[i, ]$n_con <- unlist(parsed["n_con"])
-  filtered_gwascatalog[i, ]$n_eff <- unlist(parsed["n_eff"])
-  filtered_gwascatalog[i, ]$n_bin <- unlist(parsed["n_bin"])
+  filtered_gwascatalog[i, ]$n_cont <- parsed$n
+  filtered_gwascatalog[i, ]$n_cas <- parsed$n_cas
+  filtered_gwascatalog[i, ]$n_con <- parsed$n_con
+  filtered_gwascatalog[i, ]$n_eff <- parsed$n_eff
+  filtered_gwascatalog[i, ]$n_bin <- parsed$n_bin
 }
 
 urls <- filtered_gwascatalog$summaryStatistics
