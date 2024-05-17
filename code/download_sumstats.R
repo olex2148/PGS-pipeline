@@ -41,7 +41,7 @@ filtered_gwascatalog$n_cont <-
 
 
 for (i in seq(nrow(filtered_gwascatalog))) {
-  parsed <- get_n(filtered_gwascatalog[i, ]["initialSampleDescription"], filtered_gwascatalog[i, ]["replicateSampleDescription"])
+  parsed <- get_sample_size(filtered_gwascatalog[i, ]["initialSampleDescription"], filtered_gwascatalog[i, ]["replicateSampleDescription"])
   filtered_gwascatalog[i, ]$n_cont <- unlist(parsed["n"])
   filtered_gwascatalog[i, ]$n_cas <- unlist(parsed["n_cas"])
   filtered_gwascatalog[i, ]$n_con <- unlist(parsed["n_con"])
