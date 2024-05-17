@@ -33,13 +33,13 @@ suppressPackageStartupMessages({
 # Input and output -------------------------------------------------------------------------------------------------------
 paths <- rjson::fromJSON(file = "data/paths.json")
 load(paths$col_header)
-source(paths$get_n)
+source(paths$get_sample_size)
 source(paths$create_model_info)
 source(paths$or_to_beta)
 source(paths$snp_match_format)
 source(paths$z_to_beta)
-source(paths$frq_col)
-source(paths$n_col)
+source(paths$check_frq)
+source(paths$check_n_eff)
 # sumstats = read_sumstats(paths$test_path) # For testing
 
 # Command line arguments for this script
@@ -60,7 +60,7 @@ accession_id <- str_match(args[1], "accession\\s*(.*?)\\s*_")[,2]
 # If accession ID present, use to get info for model info
 if(!is.na(accession_id)) {
   study_info <- get_studies(study_id = accession_id)
-  sample_size <- get_n(study_info@studies$initial_sample_size, study_info@studies$replication_sample_size) # Get number of cases and controls or n from sample size string
+  sample_size <- get_sample_size(study_info@studies$initial_sample_size, study_info@studies$replication_sample_size) # Get number of cases and controls or n from sample size string
   
 } else {
   study_info <- NA
@@ -113,13 +113,13 @@ assert("Less than 500K variants in initial summary statistic",
 sumstats <- snp_match_format(sumstats)
 
 # Allele frequency --
-sumstats <- check_frq_col(sumstats, study_info, sample_size)
+sumstats <- check_frq(sumstats, study_info, sample_size)
 
 # Effective population size ---
-check_n_col_list <- check_n_col(sumstats, sample_size, model_info_df)
+check_n_eff_res <- check_n_eff(sumstats, sample_size, model_info_df)
 
-sumstats <- check_n_col_list["sumstats"]$sumstats
-model_info_df <- check_n_col_list["model_info"]$model_info
+sumstats <- check_n_eff_res["sumstats"]$sumstats
+model_info_df <- check_n_eff_res["model_info"]$model_info
 
 # Deleting columns no longer needed
 delete <- c("frq_cas", "frq_con", "n_cas", "n_con", "neff_half")
