@@ -1,6 +1,13 @@
 check_n_eff <- function(sumstats, sample_size, model_info_df){
-  col_cas <- as.numeric(str_extract(colnames(sumstats)[frq_cas], "\\d+"))
-  col_con <- as.numeric(str_extract(colnames(sumstats)[frq_con], "\\d+"))
+  # Check if frq columns are on the form frq_a_X and frq_u_X (PGC format)
+  frq_cas_col <- grep("^fr?q_a_", colnames(sumstats))
+  frq_con_col <- grep("^fr?q_u_", colnames(sumstats))
+  
+  col_cas <- as.numeric(str_extract(colnames(sumstats)[frq_cas_col], "\\d+"))
+  col_con <- as.numeric(str_extract(colnames(sumstats)[frq_con_col], "\\d+"))
+  
+  colnames(sumstats)[frq_cas_col] <- "frq_cas"
+  colnames(sumstats)[frq_con_col] <- "frq_con"
 
   if(!"n_eff" %in% colnames(sumstats)){
 
