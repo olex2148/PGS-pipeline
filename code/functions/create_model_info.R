@@ -22,7 +22,7 @@ create_model_info <- function(accession_id){
   
   if(!is.na(accession_id)) {
     study_info <- get_studies(study_id = accession_id)
-    sample_size <- get_sample_size(study_info@studies$initial_sample_size)
+    sample_size <- get_sample_size(study_info@studies$initial_sample_size, study_info@studies$replication_sample_size)
     # Saving variables
     model_info_df <- model_info_df %>% 
       mutate(
