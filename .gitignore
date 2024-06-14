@@ -3,7 +3,12 @@
 .RData
 .Ruserdata
 PGS-pipeline.Rproj
-data/paths.json
-data/summary_statistics_table_export.tsv
 exports/
 plots/
+data/
+.gwf/
+__pycache__/
+results/
+code/__pycache__/
+code/functions/__pycache__/
+steps/

@@ -5,9 +5,10 @@ library(dplyr)
 library(stringr)
 library(readr)
 library(bigreadr)
+library(rjson)
 
-paths <- fromJSON(file = "data/paths.json")
-source(paths$get_n)
+paths <- rjson::fromJSON(file = "data/paths.json")
+source(paths$get_sample_size)
 
 runonce::download_file("https://www.ebi.ac.uk/gwas/api/v2/summaryStatistics/studies/download",
                        "data/",
@@ -18,15 +19,9 @@ gwascatalog$publicationDate <- as.Date(gwascatalog$publicationDate)
 
 extract_european_sample_size <- function(text) {
   if (is.na(text)) return(NA)
-  number <- str_extract(text, "\\d+(?= European)")
+  number <- stringr::str_extract(text, "\\d+(?= European)")
   if (is.na(number)) return(NA)
   as.numeric(number)
-}
-
-with_NAs <- function(a, b, exp) {
-  if (!(is.na(a) || is.na(b))) {
-    exp(a, b)
-  } else NA
 }
 
 gwascatalog$europeanSampleSize <- sapply(gwascatalog$discoverySampleAncestry, extract_european_sample_size)
@@ -41,20 +36,17 @@ filtered_gwascatalog <- gwascatalog %>%
 filtered_gwascatalog$n_cont <-
   filtered_gwascatalog$n_cas <-
   filtered_gwascatalog$n_con <-
-  filtered_gwascatalog$n_total_bin <- 
-  filtered_gwascatalog$n_eff_bin <- NA
+  filtered_gwascatalog$n_eff <- 
+  filtered_gwascatalog$n_bin <- NA
 
 
 for (i in seq(nrow(filtered_gwascatalog))) {
-  parsed <- get_n(filtered_gwascatalog[i, ]["initialSampleDescription"], filtered_gwascatalog[i, ]["replicateSampleDescription"])
-  n <- unlist(parsed["n"])
-  n_cas <- unlist(parsed["n_cas"])
-  n_con <- unlist(parsed["n_con"])
-  filtered_gwascatalog[i, ]$n_cont <- n
-  filtered_gwascatalog[i, ]$n_cas <- n_cas
-  filtered_gwascatalog[i, ]$n_con <- n_con
-  filtered_gwascatalog[i, ]$n_total_bin <- with_NAs(n_cas, n_con, function (a, b) a+b)
-  filtered_gwascatalog[i, ]$n_eff_bin <- with_NAs(n_cas, n_con, function (a, b) 4 / (1 / b + 1 / b)) 
+  parsed <- get_sample_size(filtered_gwascatalog[i, ]["initialSampleDescription"], filtered_gwascatalog[i, ]["replicateSampleDescription"])
+  filtered_gwascatalog[i, ]$n_cont <- parsed$n
+  filtered_gwascatalog[i, ]$n_cas <- parsed$n_cas
+  filtered_gwascatalog[i, ]$n_con <- parsed$n_con
+  filtered_gwascatalog[i, ]$n_eff <- parsed$n_eff
+  filtered_gwascatalog[i, ]$n_bin <- parsed$n_bin
 }
 
 urls <- filtered_gwascatalog$summaryStatistics
@@ -80,11 +72,12 @@ sumstats <- data.frame(
   filename = regmatches(fetched$content, matches)
 )
 sumstats_metadata <- filtered_gwascatalog[which(matches > 0), ]
+saveRDS(sumstats_metadata, "data/sumstats_metadata.rds")
 
 options(timeout=3600)
 for (i in seq_along(sumstats$url[1:length(seq_along(sumstats$url))])) {
   url <- paste0(sumstats$url[i], sumstats$filename[i])
-  dir <- file.path("<INSERT PATH HERE>")
+  dir <- file.path("data/sumstats/gwascatalog")
   fname <- paste0("accession", (regmatches(sumstats$filename[i], regexpr("GCST\\d+", sumstats$filename[i]))), "_.gz")
   runonce::download_file(url, dir, fname, overwrite = FALSE)
   cat(paste0(i, "/", nrow(sumstats), "\n"))
