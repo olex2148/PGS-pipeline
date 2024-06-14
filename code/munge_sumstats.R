@@ -62,7 +62,7 @@ if(!is.na(accession_id)) {
   
   model_info_df <- create_model_info(accession_id = accession_id) %>% 
     mutate(ID = base_name,
-           M_Input = nrow(sumstats))
+           m_input = nrow(sumstats))
   
   #study_info <- get_studies(study_id = accession_id)
   #sample_size <- get_sample_size(study_info@studies$initial_sample_size, study_info@studies$replication_sample_size) # Get number of cases and controls or n from sample size string
@@ -75,7 +75,7 @@ if(!is.na(accession_id)) {
 
 model_info_df <- create_model_info(accession_id = accession_id) %>% 
   mutate(ID = base_name,
-         M_Input = nrow(sumstats))
+         m_input = nrow(sumstats))
 
 # Standardizing header --------------------------------------------------------------------------------------------------
 # Discarding non-harmonized columns where harmonized version exists
@@ -127,10 +127,6 @@ check_n_eff_res <- check_n_eff(sumstats, sample_size, model_info_df)
 sumstats <- check_n_eff_res["sumstats"]$sumstats
 model_info_df <- check_n_eff_res["model_info"]$model_info
 
-# Deleting columns no longer needed
-delete <- c("frq_cas", "frq_con", "n_cas", "n_con", "neff_half")
-sumstats <- select(sumstats -delete[which(delete %in% colnames(sumstats))])
-
 # Making sure its in the sumstats 
 # - otherwise should be added manually
 assert("No effective population size in parsed sumstats",
@@ -161,7 +157,7 @@ if(!"frq" %in% colnames(snp_info)) {
 }
 
 # Saving in model info
-model_info_df$M_HapMap <-  nrow(snp_info)
+model_info_df$m_hapmap <-  nrow(snp_info)
 
 # QC -------------------------------------------------------------------------------------------------------------------------------------
 snp_info$p <- as.numeric(snp_info$p)
@@ -231,7 +227,7 @@ assert("Less than 60K variants remaining in summary statistics following QC and 
 cat(nrow(df_beta), "variants remaining after restricting to iPSYCH variants. \n")
 
 # Saving in model info
-model_info_df$M_QC <- nrow(df_beta)
+model_info_df$m_qc <- nrow(df_beta)
 
 # Saving the parsed sumstats in the outputfile ---------------------------------------------------------------------------
 head(df_beta)

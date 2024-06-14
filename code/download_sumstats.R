@@ -49,6 +49,8 @@ for (i in seq(nrow(filtered_gwascatalog))) {
   filtered_gwascatalog[i, ]$n_bin <- parsed$n_bin
 }
 
+filtered_gwascatalog <- filtered_gwascatalog %>% filter(n_eff > 10000 | n_cont > 10000)
+
 urls <- filtered_gwascatalog$summaryStatistics
 
 fetch <- function(urls) {

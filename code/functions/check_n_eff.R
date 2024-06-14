@@ -17,8 +17,8 @@ check_n_eff <- function(sumstats, sample_size, model_info_df){
       
       # Saving the info before deleting later
       if(all(c("n_cas", "n_con") %in% colnames(sumstats))){
-        model_info_df$frq_cas <- mean(sumstats$n_cas)
-        model_info_df$frq_con <- mean(sumstats$n_con)
+        model_info_df$frq_cas_median <- mean(sumstats$n_cas)
+        model_info_df$frq_con_median <- mean(sumstats$n_con)
       }
       
       # If no neff_half, check for n_cas n_con  
@@ -26,20 +26,20 @@ check_n_eff <- function(sumstats, sample_size, model_info_df){
       sumstats$n_eff = with(sumstats, 4/(1/n_cas + 1/n_con))
       
       # Saving the info before deleting
-      model_info_df$frq_cas <- mean(sumstats$n_cas)
-      model_info_df$frq_con <- mean(sumstats$n_con)
+      model_info_df$frq_cas_median <- mean(sumstats$n_cas)
+      model_info_df$frq_con_median <- mean(sumstats$n_con)
       
       # Otherwise, look up in gwas catalog using gwasrapidd  
     } else if(!is.na(sample_size$n_eff)){
       sumstats$n_eff = sample_size$n_eff
       
       # Last resort using numbers from frq_a_cas frq_u_con (PGC)
-    } else if(all(is.na(c(col_cas, col_con)))){
+    } else if(length(frq_cas_col) > 0 & length(frq_con_col) > 0) {
       sumstats$n_eff = 4/(1/col_cas + 1/col_con)
       
       # Saving the info
-      model_info_df$frq_cas <- col_cas
-      model_info_df$frq_con <- col_con
+      model_info_df$frq_cas_median <- col_cas
+      model_info_df$frq_con_median <- col_con
     }
       
     
