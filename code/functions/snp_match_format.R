@@ -17,7 +17,7 @@ snp_match_format <- function(sumstats){
   if("se" %in% colnames(sumstats)){                                      sumstats <- rename(sumstats, beta_se = se)}
   
   # Deleting sex chromosomes
-  if("chr" %in% colnames(sumstats)){                                     sumstats <- sumstats %>% filter(chr %in% 1:22) %>%  mutate(chr = as.numeric(chr))}
+  if("chr" %in% colnames(sumstats)){                                     sumstats <- sumstats %>% mutate(chr = gsub("^chr", "", chr)) %>% filter(chr %in% 1:22) %>%  mutate(chr = as.numeric(chr))}
   
   # Making sure a0 and a1 are upper case
   sumstats$a0 <- toupper(sumstats$a0)
