@@ -25,7 +25,8 @@ check_frq <- function(sumstats, sample_size){
     
     # Start by looking for frqs split between cases and controls
     if("frq_cas" %in% colnames(sumstats)) {
-      
+      sumstats$frq_cas <- as.numeric(sumstats$frq_cas)
+      sumstats$frq_con <- as.numeric(sumstats$frq_con)
       # Calculating weighted mean of the two frequencies using n_cas n_con
       if(all(c("n_cas", "n_con") %in% colnames(sumstats))) {
         sumstats$frq = with(sumstats, (frq_cas * n_cas + frq_con * n_con) / (n_cas + n_con))
@@ -34,11 +35,14 @@ check_frq <- function(sumstats, sample_size){
       } else if(!is.na(sample_size$n_cas) & !is.na(sample_size$n_con)) {
         sumstats$frq = with(sumstats, (frq_cas * sample_size$n_cas + frq_con * sample_size$n_con) / (sample_size$n_cas + sample_size$n_con))
         
-        # Otherwise use cas con from frq cols (PGC format)
+        # Otherwise use cas con from frq cols (PGC format) and save the n cas and con in sample_size
       } else if(length(frq_cas_col) > 0) {
         sumstats$frq = with(sumstats, (frq_cas * col_cas + frq_con * col_con) / (col_cas + col_con))
+        
+        sample_size$n_cas <- col_cas
+        sample_size$n_con <- col_con
       }
     }
   }
-  return(sumstats)
+  return(list("sumstats" = sumstats, "sample_size" = sample_size))
 }

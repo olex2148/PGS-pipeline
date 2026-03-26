@@ -11,7 +11,7 @@ or_to_beta <- function(sumstats){
   
   # Checking for OR
   if("or" %in% colnames(sumstats)){
-    cat("Odds ratio found in sumstats, imputing beta.")
+    cat("Odds ratio found in sumstats, imputing beta. \n")
     sumstats <- sumstats[complete.cases(sumstats$or), ]
     sumstats$beta = with(sumstats, log(or))
     sumstats <- select(sumstats, !or) # Removing OR col
@@ -29,10 +29,13 @@ or_to_beta <- function(sumstats){
       
       # If cor is poor, the reported SE is not SE of log(OR), but probably SE of OR. Therefore, compute SE of beta
       if(is.na(pval_cor) || pval_cor < 0.9) { # Fitting threshold?
+        cat("pval_cor is ", pval_cor, "\n")
+        cat("Reported SE seems to be standard error of OR. Therefore, computing SE of beta. \n")
         sumstats$beta_se = with(sumstats, abs(beta) / qnorm(pmax(p, .Machine$double.xmin) / 2, lower.tail = FALSE)) # beta/z
       }
       # if SE not there, estimate with beta/z
     } else if (!"beta_se" %in% colnames(sumstats)) {
+      cat("No SE in sumstats. Computing as beta/z. \n")
       sumstats$beta_se = with(sumstats, abs(beta) / qnorm(pmax(p, .Machine$double.xmin) / 2, lower.tail = FALSE)) # beta/z
     }
   }

@@ -4,8 +4,8 @@
 #' # shown is an example of adding columns for Standard Error (SE)
 
 load("data/sumstatsColHeaders.rda")
-new_cols <- data.frame("Uncorrected"=c("NCAS",   "NCON", "NCONTROLS", "FCAS",   "EAF_CASES", "FCON", "EAF_CONTROLS", "NEFFDIV2", "IMPINFO", "INFOSCORE", "DIRE", "ALT_ALLELE", "B", "b", "RISK_ALLELE", "OA"),
-                        "Corrected"= c("N_CAS", "N_CON", "N_CON", "FRQ_CAS", "FRQ_CAS", "FRQ_CON", "FRQ_CON",     "NEFF_HALF", "INFO",  "INFO",   "DIRECTION", "A2", "BETA", "BETA",        "A1",       "A2"))
+new_cols <- data.frame("Uncorrected"=c("Freq1", "NCAS",   "NCON", "NCONTROLS", "FCAS",   "EAF_CASES", "FCON", "EAF_CONTROLS", "NEFFDIV2", "IMPINFO", "INFOSCORE", "DIRE", "ALT_ALLELE", "B", "b", "RISK_ALLELE", "OA", "NMISS"),
+                        "Corrected"= c("FRQ", "N_CAS", "N_CON", "N_CON", "FRQ_CAS", "FRQ_CAS", "FRQ_CON", "FRQ_CON",     "NEFF_HALF", "INFO",  "INFO",   "DIRECTION", "A2", "BETA", "BETA",        "A1",       "A2", "N"))
 sumstatsColHeaders <- rbind(sumstatsColHeaders,new_cols)
 
 #remove duplicates
