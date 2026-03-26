@@ -6,7 +6,7 @@ library(stringr)
 library(readr)
 library(bigreadr)
 library(rjson)
-
+ 
 paths <- rjson::fromJSON(file = "data/paths.json")
 source(paths$get_sample_size)
 
