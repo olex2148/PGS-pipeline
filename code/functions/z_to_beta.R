@@ -20,4 +20,4 @@ z_to_beta <- function(sumstats){
     sumstats$beta_se <- with(sumstats, abs(beta) / qnorm(pmax(p, .Machine$double.xmin) / 2, lower.tail = FALSE)) # beta/z
   }
   return(sumstats)
-}
+} 
