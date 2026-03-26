@@ -5,7 +5,7 @@
 A function to split path strings into path, basename and suffix for easy manipulation of input and output names in the workflow.
 
 """
-
+ 
 import os, re
 
 def modpath(p, parent=None, base=None, suffix=None):
