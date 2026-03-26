@@ -1,6 +1,6 @@
 #' Split gwasrapidd initial_sample_size strings into cases and controls
 #' 
-
+ 
 get_sample_size <- function(initial_sample_size_str, replication_sample_size_str) {
   require(stringr)
   
