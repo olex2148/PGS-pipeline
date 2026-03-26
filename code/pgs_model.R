@@ -7,7 +7,7 @@
 #' (output of parser.R) as well as a base name for the output  files - as there are several
 #' (models, scores, figures, model info)
 #' 
-#' @Todo
+#'
 
 
 suppressPackageStartupMessages({
@@ -210,7 +210,7 @@ model_info_df$r2_median <- median(all_r2)
 model_info_df$range_median <- median(range[keep])
 model_info_df$shrinkage <- coef_shrink
 model_info_df$ldsc_intercept <- ldsc[1]
-model_info_df$n_eff <- 4 / (1 / n_cases + 1 / n_controls)
+# model_info_df$n_eff <- 4 / (1 / n_cases + 1 / n_controls) # Lucas, which n_cases and n_controls?
 model_info_df$n_eff_beta_se_est <- quantile(8 / df_beta$beta_se^2, 0.999)
 model_info_df$alpha_median <- median(all_alpha)
 
@@ -273,7 +273,7 @@ scores <- data.frame(family.ID = covariates_df$family.ID,
                      ldpred2_pgs = pred_auto,
                      lassosum_pgs = pred_lassosum)
 
-# TODO: Don't save scores as rds
+
 saveRDS(scores, paste0(base_path, "_scores.rds"))
 
 cat("\n Finished computing scores. Models, auto model parameters, model info, and auto + lassosum scores were saved in 4 distinct files in", base_path, "/")

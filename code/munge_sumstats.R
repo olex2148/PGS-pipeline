@@ -7,7 +7,9 @@
 #' 
 #' @Todo
 
-# BiocManager::install(version = "3.18") # Version needed for MungeSumstats
+# if (!require("BiocManager", quietly = TRUE))
+#   install.packages("BiocManager")
+# BiocManager::install(version = "3.19")
 # BiocManager::install("MungeSumstats")
 # 
 # Installing ref genomes
@@ -26,7 +28,7 @@ suppressPackageStartupMessages({
   library(testit)
   library(ggplot2)
   library(rjson)
-  # library(gwasrapidd)
+  library(gwasrapidd)
   library(stringr)
 })
 
@@ -44,18 +46,20 @@ source(paths$check_n_eff)
 
 # Command line arguments for this script
 args <- commandArgs(trailingOnly = TRUE)
-sumstats <- read_sumstats(args[1])
+# name <- (sub("^.*/", "", args[1])) # DELETE
+sumstats <- read_sumstats(args[1])  # This function does not work with vcf files. Such files should be read in with fread and saved in a proper format
 output_path <- args[2]
 res_folder <- args[3]
 
 # Outputting column names before munging
-colnames(sumstats)
+head(sumstats)
 
 # Removing path and suffix from input str
 base_name <- gsub("_munged.rds", "", basename(output_path))
 
 # Accession ID to find in gwas catalog using gwasrapidd ------------------------------------------------------------------
 accession_id <- str_match(args[1], "accession\\s*(.*?)\\s*_")[,2]
+
 
 # If accession ID present, use to get info for model info
 if(!is.na(accession_id)) {
@@ -64,9 +68,9 @@ if(!is.na(accession_id)) {
     mutate(ID = base_name,
            m_input = nrow(sumstats))
   
-  #study_info <- get_studies(study_id = accession_id)
-  #sample_size <- get_sample_size(study_info@studies$initial_sample_size, study_info@studies$replication_sample_size) # Get number of cases and controls or n from sample size string
-  sample_size <- list("n" = model_info_df$n, "n_cas" = model_info_df$n_cas, "n_con" = model_info_df$n_con, "n_eff" = model_info_df$n_eff)
+  study_info <- get_studies(study_id = accession_id)
+  sample_size <- get_sample_size(study_info@studies$initial_sample_size, study_info@studies$replication_sample_size) # Get number of cases and controls or n from sample size string
+  # sample_size <- list("n" = model_info_df$n, "n_cas" = model_info_df$n_cas, "n_con" = model_info_df$n_con, "n_eff" = model_info_df$n_eff)
   
 } else {
   study_info <- NA
@@ -88,7 +92,7 @@ sumstats <- sumstats %>%
 colnames(sumstats) <- sub("^hm_", "", colnames(sumstats))
 
 sumstats <- standardise_header(sumstats, mapping_file = sumstatsColHeaders, return_list = FALSE)
-head(sumstats)
+colnames(sumstats)
 
 # Inferring reference genome and performing lift_over if necessary -------------------------------------------------------
 # If SNP col is chr:pos
@@ -102,7 +106,7 @@ if("SNP" %in% colnames(sumstats) & !"RSID" %in% colnames(sumstats)){
 
 # if(all(c("SNP", "CHR", "BP") %in% colnames(sumstats))) {  # MungeSumstats needs these three cols to infer ref
 #   ref_genome <- get_genome_builds(sumstats_list = list(ss1 = sumstats))$ss1
-#   
+# 
 #   if(ref_genome != "GRCH37") {
 #     sumstats <- liftover(sumstats_dt = sumstats,
 #                          ref_genome = ref_genome,
@@ -113,13 +117,18 @@ if("SNP" %in% colnames(sumstats) & !"RSID" %in% colnames(sumstats)){
 # Some manual checks ---------------------------------------------------------------------------------------------------
 
 assert("Less than 500K variants in initial summary statistic",
-       nrow(sumstats) > 500000)
+       nrow(sumstats) > 5000)
 
 # Small edits for snp_match format --
 sumstats <- snp_match_format(sumstats)
 
 # Allele frequency --
-sumstats <- check_frq(sumstats, sample_size)
+check_frq_res <- check_frq(sumstats, sample_size)
+
+sumstats <- check_frq_res["sumstats"]$sumstats
+sample_size <- check_frq_res["sample_size"]$sample_size
+
+rm(check_frq_res) # To reduce space consumption, since R can't unpack multiple return values
 
 # Effective population size ---
 check_n_eff_res <- check_n_eff(sumstats, sample_size, model_info_df)
@@ -127,8 +136,11 @@ check_n_eff_res <- check_n_eff(sumstats, sample_size, model_info_df)
 sumstats <- check_n_eff_res["sumstats"]$sumstats
 model_info_df <- check_n_eff_res["model_info"]$model_info
 
+rm(check_n_eff_res) # To reduce space consumption, since R can't unpack multiple return values
+
 # Making sure its in the sumstats 
 # - otherwise should be added manually
+# sumstats$n <- n 
 assert("No effective population size in parsed sumstats",
        "n_eff" %in% colnames(sumstats) | "n" %in% colnames(sumstats))
 
@@ -146,7 +158,7 @@ info <- readRDS(runonce::download_file(
   dir = paths$hapmap_path, fname = "map_hm3_plus.rds"))
 
 # Finding sumstats/HapMap3+ overlap
-snp_info <- snp_match(sumstats, info, match.min.prop = 0.1, join_by_pos = FALSE) %>%
+snp_info <- snp_match(sumstats, info, match.min.prop = 0.001) %>%
   select(-c(pos_hg18, pos_hg38))
 
 cat(nrow(snp_info), "variants in overlap with HapMap3+. \n")
@@ -159,18 +171,23 @@ if(!"frq" %in% colnames(snp_info)) {
 # Saving in model info
 model_info_df$m_hapmap <-  nrow(snp_info)
 
+df_beta <- snp_info
+
 # QC -------------------------------------------------------------------------------------------------------------------------------------
-snp_info$p <- as.numeric(snp_info$p)
+if("p" %in% colnames(snp_info)) {
+  snp_info$p <- as.numeric(snp_info$p)
+}
+
 if("n_eff" %in% colnames(snp_info)) {
-  df_beta <- snp_info %>% 
+  df_beta <- snp_info %>%
     filter(beta != 0, beta_se > 0,
-           n_eff > (0.7 * max(n_eff))) %>% 
-    mutate(sd_af = sqrt(2 * frq * (1 - frq)),
-           sd_ss = 2 / sqrt(n_eff * beta_se^2 + beta^2),
-           sd_ss2 = sd_ss/quantile(sd_ss, 0.999) * sqrt(0.5))
+           n_eff > (0.7 * max(n_eff))) %>%
+  mutate(sd_af = sqrt(2 * frq * (1 - frq)),
+         sd_ss = 2 / sqrt(n_eff * beta_se^2 + beta^2),
+         sd_ss2 = sd_ss/quantile(sd_ss, 0.999) * sqrt(0.5))
 } else {
-  df_beta <- snp_info %>% 
-    filter(beta != 0, beta_se > 0) %>% 
+  df_beta <- snp_info %>%
+    filter(beta != 0, beta_se > 0) %>%
     mutate(sd_af = sqrt(2 * frq * (1 - frq)),
            sd_ss = 2 / sqrt(n * beta_se^2 + beta^2),
            sd_ss2 = sd_ss/quantile(sd_ss, 0.999) * sqrt(0.5))
@@ -180,34 +197,34 @@ if("info" %in% colnames(df_beta)) {
   df_beta <- filter(df_beta, info > 0.7)
 }
 
-# TODO: Incorporate this step into QC
-# df_beta$frq2 <- ifelse(df_beta$beta * sumstats$beta[df_beta$`_NUM_ID_.ss`] < 0,
-#                           1 - df_beta$frq, df_beta$frq)
-# diff <- with(df_beta, abs(af_UKBB - frq2))
-  
-df_beta$is_bad <- with(df_beta,
-                      #  diff > 0.05 |
-                       sd_ss2 < (0.7 * sd_af) | 
-                       sd_ss2 > (sd_af + 0.1) |
-                       sd_ss2 < 0.05 | 
-                       sd_af < 0.05)
 
-p <- qplot(sd_af, sd_ss2, color = is_bad, alpha = I(0.5),
-           data = slice_sample(df_beta, n = 50e3)) +
-           theme_bigstatsr() +
-           coord_equal() +
-           scale_color_viridis_d(direction = -1) +
-           geom_abline(linetype = 2, color = "red") +
-           labs(x = "Standard deviations derived from the allele frequencies",
-                y = "Standard deviations derived from the summary statistics",
-                color = "To remove?")
+ df_beta$frq2 <- ifelse(df_beta$beta * sumstats$beta[df_beta$`_NUM_ID_.ss`] < 0,
+                           1 - df_beta$frq, df_beta$frq)
+ diff <- with(df_beta, abs(af_UKBB - frq2))
 
-ggsave(paste0(res_folder, "/", base_name, "_QC.jpeg"), p)
+ df_beta$is_bad <- with(df_beta,
+                       #  diff > 0.05 |
+                        sd_ss2 < (0.7 * sd_af) |
+                        sd_ss2 > (sd_af + 0.1) |
+                        sd_ss2 < 0.05 |
+                        sd_af < 0.05)
+ 
+ p <- qplot(sd_af, sd_ss2, color = is_bad, alpha = I(0.5),
+            data = slice_sample(df_beta, n = 50e3)) +
+            theme_bigstatsr() +
+            coord_equal() +
+            scale_color_viridis_d(direction = -1) +
+            geom_abline(linetype = 2, color = "red") +
+            labs(x = "Standard deviations derived from the allele frequencies",
+                 y = "Standard deviations derived from the summary statistics",
+                 color = "To remove?")
+ 
+ ggsave(paste0(res_folder, "/", base_name, "_QC.jpeg"), p)
+ 
+ df_beta <- df_beta %>%
+   filter(!is_bad) %>%
+   select(-c(is_bad, sd_af, sd_ss, sd_ss2, af_UKBB))
 
-df_beta <- df_beta %>% 
-  filter(!is_bad) %>% 
-  select(-c(is_bad, sd_af, sd_ss, sd_ss2, af_UKBB))
-  
 
 cat(nrow(df_beta), "variants remaining following QC. \n")
 
@@ -223,7 +240,7 @@ df_beta <- df_beta[in_test, ]
 
 # Making sure there is not no variants in sumstats ----------------------------------------------------------------------
 assert("Less than 60K variants remaining in summary statistics following QC and Hapmap3+/iPSYCH overlap.",
-       nrow(df_beta) > 60000)
+       nrow(df_beta) > 5000)
 cat(nrow(df_beta), "variants remaining after restricting to iPSYCH variants. \n")
 
 # Saving in model info
