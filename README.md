@@ -19,8 +19,9 @@ It operates on publicly available GWAS summary statistics (e.g. from the GWAS Ca
 Requirements
 R (≥ 4.2 recommended)
 Key packages: bigsnpr, bigstatsr, MungeSumstats, data.table
-Access to an LD reference panel (e.g. HapMap3+)
-Optional: HPC environment for parallel execution across traits
+LD reference panel (e.g. HapMap3+)
+Optional: HPC environment for parallel execution across traits 
+
 Running the pipeline
 Prepare GWAS summary statistics
 Input files should contain effect sizes and standard errors. The pipeline includes harmonisation (via MungeSumstats) and performs variant-level QC automatically.
