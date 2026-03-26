@@ -3,7 +3,7 @@ Pipeline using [gwf workflow](https://gwf.app/) and [LDpred2-auto](https://prive
 
 This repository contains a scalable and reproducible pipeline for harmonising GWAS summary statistics and estimating key parameters of genetic architecture using LDpred2-auto. The pipeline was developed for the study:
 
-Hansen et al. Characterising the genetic architecture of thousands of complex traits from public GWAS summary statistics (under review).
+Hansen et al. Characterising the genetic architecture of thousands of complex traits from public GWAS summary statistics.
 
 Overview
 
@@ -17,7 +17,7 @@ Inferred predictive performance (R²)
 It operates on publicly available GWAS summary statistics (e.g. from the GWAS Catalog) and applies standardised quality control, harmonisation, and model fitting within a unified framework.
 
 Requirements
-R (≥ 4.2 recommended)
+Python and R (≥ 4.2 recommended)
 Key packages: bigsnpr, bigstatsr, MungeSumstats, data.table
 LD reference panel (e.g. HapMap3+)
 Optional: HPC environment for parallel execution across traits 
