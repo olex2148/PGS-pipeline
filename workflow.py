@@ -6,7 +6,7 @@ gwf workflow to parse all GWAS sumstats in data folder and generate PRS from the
 using LDpred2-auto and lassosum as implemented in LDpred2
 
 @Author: Ole S Hansen
-@Date: 
+@Date: 26/3-26
 
 """
 import os, json
