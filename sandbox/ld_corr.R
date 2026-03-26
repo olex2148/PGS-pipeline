@@ -1,4 +1,4 @@
-tmp <- tempfile(tmpdir = "data/corr", pattern = "hm3+_corr")
+tmp <- tempfile(tmpdir = "data/corr", pattern = "hm3+_corr") 
 
 for (chr in 1:22) {
   
