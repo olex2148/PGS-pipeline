@@ -3,7 +3,7 @@ filenames <- list.files(logs_path)
 
 gwf_status_path <- "old logs/gwf status latest"
 gwf_status <- readlines(gwf_status_path)
-
+ 
 failed <- gwf_status[which(regexpr("failed", gwf_status) > 0)]
 failed_ids <- regmatches(failed, regexpr("GCST\\d+", failed))
 
