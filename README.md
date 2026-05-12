@@ -40,7 +40,7 @@ It operates on publicly available GWAS summary statistics (e.g. from the GWAS Ca
 .gwf: <br>
 	Here the logfiles output by gwf can be found, useful for debugging<br>
 code: <br>
-	Contains scripts that munge and generates PGS model. This is also where "n" can be added if it is missing in the sumstats. <br>
+	Contains scripts that munge and generate the PGS model. This is also where "n" can be added if it is missing in the sumstats. <br>
 	Also contains the "functions" folder that rename sumstat columns, calculates missing variables depending on what is present in the sumstats, extracts n, converts OR to beta, etc <br>
 data: <br>
 	data contains HapMap3+, the LD reference, and a folder called "sumstats" where all sumstats should be placed. <br>
@@ -54,9 +54,9 @@ steps: <br>
 
 ## Instructions/Commands: <br>
 
-Firstly download and place the ld blocks as described above. Next edit the json in "data" and specify the path to your work directory "work_dir" e.g. ~/C:/Users/USER/X/Desktop/PGS_workflow/. 
+Firstly download and place the LD block and Hapmap3+ files as described above. Next edit the json in "data" and specify the path to your work directory "work_dir" e.g. ~/C:/Users/USER/X/Desktop/PGS_workflow/. 
 
-When the required packages and software is installed and activated in ones conda environment and the user is situated in the root folder (i.e. where the workflow.py is) one can give the "gwf run" command in the linux terminal. This will submit the jobs that have not yet run in the specified working directory. <br>
+When the required packages and software are installed and activated in ones conda environment and the user is situated in the root folder (i.e. where the workflow.py is) one can give the "gwf run" command in the linux terminal. This will submit the jobs that have not yet run in the specified working directory. <br>
 Another relevant gwf command is "gwf status" which will let the user know if the munging or model is complete or still running, or if it has failed. If it has failed go to the .gwf folder and inspect the logs. Most of the time "n" is missing and needs to be added manually in add_n from the code folder. <br>
  
 
