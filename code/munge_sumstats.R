@@ -239,9 +239,9 @@ in_test <- vctrs::vec_in(df_beta[, c("chr", "pos")], dosage$map[, c("chr", "pos"
 df_beta <- df_beta[in_test, ]                          
 
 # Making sure there is not no variants in sumstats ----------------------------------------------------------------------
-assert("Less than 60K variants remaining in summary statistics following QC and Hapmap3+/iPSYCH overlap.",
+assert("Less than XK variants remaining in summary statistics following QC and Hapmap3+/[genotype] overlap.",
        nrow(df_beta) > 5000)
-cat(nrow(df_beta), "variants remaining after restricting to iPSYCH variants. \n")
+cat(nrow(df_beta), "variants remaining after restricting to [genotype] variants. \n")
 
 # Saving in model info
 model_info_df$m_qc <- nrow(df_beta)
