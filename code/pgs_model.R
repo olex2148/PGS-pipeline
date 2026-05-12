@@ -37,7 +37,7 @@ info <- readRDS(paths$hapmap_path)
 # Reading in [genotype] data
 dosage <- snp_attach(paths$dosage_path) 
 dosage$map <- dosage$map %>% 
-  rename("chr" = "CHR", "pos" = "POS", "a0" = "a1", "a1" = "a2")
+  rename("chr" = "chromosome", "pos" = "physical.pos", "a0" = "allele1", "a1" = "allele2") # Suits test data, not iPSYCh. For iPSYCH use: rename("chr" = "CHR", "pos" = "POS", "a0" = "a1", "a1" = "a2")
 
 # Reading in parsed sumstats
 # df_beta = readRDS(paths$test_parsed) # For testing
