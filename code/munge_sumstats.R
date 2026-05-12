@@ -230,7 +230,7 @@ cat(nrow(df_beta), "variants remaining following QC. \n")
 # Reading in iPSYCH data
 dosage <- snp_attach(paths$dosage_path) 
 dosage$map <- dosage$map %>% 
-  rename("chr" = "chromosome", "pos" = "physical.pos", "a0" = "a1", "a1" = "a2")
+  rename("chr" = "chromosome", "pos" = "physical.pos", "a0" = "allele1", "a1" = "allele2")
 
 # Finding iPSYCH overlap
 in_test <- vctrs::vec_in(df_beta[, c("chr", "pos")], dosage$map[, c("chr", "pos")])
