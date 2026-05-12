@@ -156,7 +156,7 @@ sumstats <- z_to_beta(sumstats)
 info <- readRDS(paths$hapmap_path)
 
 # Finding sumstats/HapMap3+ overlap
-snp_info <- snp_match(sumstats, info, match.min.prop = 0.001) %>%
+snp_info <- snp_match(sumstats, info, match.min.prop = 0.001, join_by_pos = FALSE) %>%
   select(-c(pos_hg18, pos_hg38))
 
 cat(nrow(snp_info), "variants in overlap with HapMap3+. \n")
