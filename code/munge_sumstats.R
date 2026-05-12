@@ -153,9 +153,7 @@ sumstats <- z_to_beta(sumstats)
 
 # Finding Hapmap overlap with sumstats -----------------------------------------------------------------------------------
 # Reading in HapMap3+ 
-info <- readRDS(runonce::download_file(
-  "https://figshare.com/ndownloader/files/37802721",
-  dir = paths$hapmap_path, fname = "map_hm3_plus.rds"))
+info <- readRDS(paths$hapmap_path)
 
 # Finding sumstats/HapMap3+ overlap
 snp_info <- snp_match(sumstats, info, match.min.prop = 0.001) %>%
