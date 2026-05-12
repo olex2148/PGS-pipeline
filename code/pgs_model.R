@@ -32,9 +32,7 @@ paths <- fromJSON(file = "data/paths.json")
 
 # Loading data -------------------------------------------------------------------------------------------------
 # Reading in HapMap3+ 
-info <- readRDS(runonce::download_file(
-  "https://figshare.com/ndownloader/files/37802721",
-  dir = paths$hapmap_path, fname = "map_hm3_plus.rds"))
+info <- readRDS(paths$hapmap_path)
 
 # Reading in [genotype] data
 dosage <- snp_attach(paths$dosage_path) 
