@@ -11,8 +11,6 @@ Hansen et al. Characterising the genetic architecture of thousands of complex tr
 
 Overview
 
-
-
 The pipeline enables systematic estimation of:
 
 SNP-based heritability (h²)
@@ -25,19 +23,19 @@ It operates on publicly available GWAS summary statistics (e.g. from the GWAS Ca
 Requirements: 
 
 Linux 
-Conda environment with the following
-GWF workflow (https://gwf.app/) ≥  v2.1 
-Python ≥ v3.8
-R ≥ v4.2
+Conda environment with the following <br>
+GWF workflow (https://gwf.app/) ≥  v2.1 <br>
+Python ≥ v3.8<br>
+R ≥ v4.2<br>
 
-R packages: bigsnpr, bigstatsr, MungeSumstats, data.table, rjson, openxlsx, testit, dplyr, stringr, ggplot2
+R packages: bigsnpr, bigstatsr, MungeSumstats, data.table, rjson, openxlsx, testit, dplyr, stringr, ggplot2<br>
 
-Relevant folder structure: 
+Relevant folder structure: <br>
 
-.gwf: 
-	Here the logfiles output by gwf can be found, useful for debugging
-code: 
-	Contains scripts that munge and generates PGS model. This is also where "n" can be added if it is missing in the sumstats. 
+.gwf: <br>
+	Here the logfiles output by gwf can be found, useful for debugging<br>
+code: <br>
+	Contains scripts that munge and generates PGS model. This is also where "n" can be added if it is missing in the sumstats. <br>
 	Also contains the "functions" folder that rename sumstat columns, calculates missing variables depending on what is present in the sumstats, extracts n, converts OR to beta, etc 
 data: 
 	data contains HapMap3+, the LD reference, and a folder called "sumstats" where all sumstats should be placed. 
