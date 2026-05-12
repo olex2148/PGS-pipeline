@@ -16,7 +16,7 @@
  "check_n_eff": "code/functions/check_n_eff.R",
 
  "_comment3": "Input files for pgs_model.R",
- "dosage_path": "test_data/dosage.rds",
+ "dosage_path": "data/genotype_data/public-data3.rds",
  "hapmap_path": "data/hapmap3+/map_hm3_plus.rds",
  "ld_blocks_path": "data/ld_blocks/ldref/LD_with_blocks_chr"
 }
