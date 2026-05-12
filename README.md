@@ -9,30 +9,30 @@ This repository contains a scalable and reproducible pipeline for harmonising GW
 Hansen et al. Characterising the genetic architecture of thousands of complex traits from public GWAS summary statistics.
 
 
-##Overview
+## Overview
 
 The pipeline enables systematic estimation of:
 
--SNP-based heritability (h²)
--Polygenicity (p)
--Frequency-dependent effect size parameter (α)
--Inferred predictive performance (R²)
+- SNP-based heritability (h²)
+- Polygenicity (p)
+- Frequency-dependent effect size parameter (α)
+- Inferred predictive performance (R²)
 
 It operates on publicly available GWAS summary statistics (e.g. from the GWAS Catalog) and applies standardised quality control, harmonisation, and model fitting within a unified framework.
 
-##Requirements: 
+## Requirements: 
 
--Linux 
--Conda environment with the following <br>
--GWF workflow (https://gwf.app/) ≥  v2.1 <br>
--Python ≥ v3.8<br>
--R ≥ v4.2<br>
+- Linux 
+- Conda environment with the following <br>
+- GWF workflow (https://gwf.app/) ≥  v2.1 <br>
+- Python ≥ v3.8<br>
+- R ≥ v4.2<br>
 
-##R packages: 
+## R packages: <br>
 
 **bigsnpr, bigstatsr, MungeSumstats, data.table, rjson, openxlsx, testit, dplyr, stringr, ggplot2** <br>
 
-##Relevant folder structure: <br>
+## Relevant folder structure: <br>
 
 .gwf: <br>
 	Here the logfiles output by gwf can be found, useful for debugging<br>
@@ -49,13 +49,13 @@ results: <br>
 steps: <br>
 	The munged sumstats will be placed here<br>
 
-##Instructions/Commands: <br>
+## Instructions/Commands: <br>
 
 When the required packages and software is installed and activated in ones conda environment and the user is situated in the root folder (i.e. where the workflow.py is) one can give the "gwf run" command in the linux terminal. This will submit the jobs that have not yet run in the specified working directory. <br>
 Another relevant gwf command is "gwf status" which will let the user know if the munging or model is complete or still running, or if it has failed. If it has failed go to the .gwf folder and inspect the logs. Most of the time "n" is missing and needs to be added manually in add_n from the code folder. <br>
  
 
-##Outputs:<br>
+## Outputs:<br>
 
 Logfile in .gwf folder<br>
 Variant QC plot<br>
