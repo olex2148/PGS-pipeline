@@ -71,6 +71,9 @@ Meta-data sheet relevantly including model parameters h2, inf-r2, polygenicity, 
 
 All filtering thresholds and QC criteria are implemented programmatically and documented in the manuscript and should be adapted to fit the data that is being worked on.<br>
 Users are responsible for ensuring compatibility between GWAS ancestry and the LD reference panel.<br>
-Citation
+Installation time: N/A
+Special hardware: None
+Runtime: Depends on sumstat size, test set takes ~10 min 
+## Citation
 
 If you use this pipeline, please cite the associated manuscript (details to be updated upon publication).
