@@ -223,20 +223,20 @@ write.table(model_info_df,
 # Predicting in iPSYCH ------------------------------------------------------------------------------------------------------
 
 # Reading in PCs and info for covariates
-pcs <- readRDS(paths$pcs_path)
-meta <- fread(paths$meta_path)
+# pcs <- readRDS(paths$pcs_path)
+# meta <- fread(paths$meta_path)
 
 # Computing sex and age
-covariates_df <- dosage$fam %>% 
-  left_join(meta[, c("fdato", "gender", "pid")], by = c("family.ID" = "pid")) %>% 
-  mutate(sex = ifelse(gender == "F", 1, 0),
-         # Time diff in years between present date and fdate
-         age = lubridate::time_length(
-           difftime(
-             as.Date("01/01/2023", format = "%d/%m/%Y"), 
-             as.Date(fdato, format = "%d/%m/%Y")), 
-           "years")) %>% 
-  select(-c(paternal.ID, maternal.ID, affection, gender))
+#covariates_df <- dosage$fam %>% 
+#  left_join(meta[, c("fdato", "gender", "pid")], by = c("family.ID" = "pid")) %>% 
+#  mutate(sex = ifelse(gender == "F", 1, 0),
+#         # Time diff in years between present date and fdate
+#         age = lubridate::time_length(
+#           difftime(
+#             as.Date("01/01/2023", format = "%d/%m/%Y"), 
+#             as.Date(fdato, format = "%d/%m/%Y")), 
+#           "years")) %>% 
+#  select(-c(paternal.ID, maternal.ID, affection, gender))
 
 # If restricting to 2015 samples
 # ind_keep <- which(covariates_df$is_2012 == 0)
@@ -268,8 +268,8 @@ pred_lassosum <- big_prodVec(G,
                              ncores = nb_cores())
 
 # cbind with family and sample ID and save
-scores <- data.frame(family.ID = covariates_df$family.ID, 
-                     sample.ID = covariates_df$sample.ID, 
+scores <- data.frame(family.ID = dosage$fam$family.ID, 
+                     sample.ID = dosage$fam$sample.ID, 
                      ldpred2_pgs = pred_auto,
                      lassosum_pgs = pred_lassosum)
 
