@@ -36,7 +36,7 @@ info <- readRDS(runonce::download_file(
   "https://figshare.com/ndownloader/files/37802721",
   dir = paths$hapmap_path, fname = "map_hm3_plus.rds"))
 
-# Reading in iPSYCH data
+# Reading in [genotype] data
 dosage <- snp_attach(paths$dosage_path) 
 dosage$map <- dosage$map %>% 
   rename("chr" = "CHR", "pos" = "POS", "a0" = "a1", "a1" = "a2")
@@ -220,7 +220,7 @@ write.table(model_info_df,
             file = model_info, sep = "\t",
             row.names = FALSE, append = FALSE, quote = FALSE)
   
-# Predicting in iPSYCH ------------------------------------------------------------------------------------------------------
+# Predicting in [genotype] ------------------------------------------------------------------------------------------------------
 
 # Reading in PCs and info for covariates
 # pcs <- readRDS(paths$pcs_path)
@@ -254,7 +254,7 @@ G <- dosage$genotypes
 map_pgs <- df_beta[, c("chr", "pos", "a0", "a1")]; map_pgs$beta <- 1
 map_pgs2 <- snp_match(map_pgs, dosage$map)
 
-# Compute scores for all individuals in iPSYCH
+# Compute scores for all individuals in [genotype]
 pred_auto <- big_prodVec(G,
                          beta_auto[map_pgs2[["_NUM_ID_.ss"]]] * map_pgs2$beta, # Model
 #                         ind.row = ind_keep, # For restriction to 2015 inds
