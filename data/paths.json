@@ -17,6 +17,6 @@
 
  "_comment3": "Input files for pgs_model.R",
  "dosage_path": "test_data/dosage.rds",
- "hmap_path": "data/hapmap3+",
+ "hapmap_path": "data/hapmap3+",
  "ld_blocks_path": "data/ld_blocks/ldref/LD_with_blocks_chr"
 }
