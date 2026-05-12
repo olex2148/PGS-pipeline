@@ -44,7 +44,7 @@ code: <br>
 	Also contains the "functions" folder that rename sumstat columns, calculates missing variables depending on what is present in the sumstats, extracts n, converts OR to beta, etc <br>
 data: <br>
 	data contains HapMap3+, the LD reference, and a folder called "sumstats" where all sumstats should be placed. <br>
-	In the original pipeline it contains paths.json for path specification to genotype data, HapMap3+, phenotype data, LD blocks, iPSYCH meta data, relatives and pcs (used for making a homogenous population when calculating adjusted R2). In this standalone pipeline run these paths are modified to be generalised for future users and this test. The json also is where one should specify ones work directory "work_dir" to the desired subfolder in "sumstats" according to the sumstats that are desired to be run. <br>
+	In the original pipeline it contains paths.json for path specification to genotype data, HapMap3+, phenotype data, LD blocks, iPSYCH meta data, relatives and pcs (used for making a homogenous population when calculating adjusted R2). In this standalone pipeline run these paths are modified to be generalised for future users and this test.  <br>
 root: <br>
 	Where the workflow.py is (i.e. ../data)<br>
 results: <br>
@@ -53,6 +53,8 @@ steps: <br>
 	The munged sumstats will be placed here<br>
 
 ## Instructions/Commands: <br>
+
+Firstly download and place the ld blocks as described above. Next edit the json in "data" and specify the path to your work directory "work_dir" e.g. ~/C:/Users/USER/X/Desktop/PGS_workflow/. 
 
 When the required packages and software is installed and activated in ones conda environment and the user is situated in the root folder (i.e. where the workflow.py is) one can give the "gwf run" command in the linux terminal. This will submit the jobs that have not yet run in the specified working directory. <br>
 Another relevant gwf command is "gwf status" which will let the user know if the munging or model is complete or still running, or if it has failed. If it has failed go to the .gwf folder and inspect the logs. Most of the time "n" is missing and needs to be added manually in add_n from the code folder. <br>
