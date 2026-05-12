@@ -1,0 +1,22 @@
+{
+ "_comment": "Python paths",
+ "sumstat_folder": "data/sumstats/test",
+ "work_dir": "~/[PATH TO YOUR WORK DIRECTORY]",
+
+ "_comment2": "Files for munge_sumstats.R",
+ "test_path": "data/sumstats/tests",
+ "test_parsed": "steps/munged_sumstats/tmp/",
+ "col_header": "data/sumstatsColHeaders.rda",
+ "get_sample_size": "code/functions/get_sample_size.R",
+ "create_model_info": "code/functions/create_model_info.R",
+ "or_to_beta": "code/functions/or_to_beta.R",
+ "snp_match_format": "code/functions/snp_match_format.R",
+ "z_to_beta": "code/functions/z_to_beta.R",
+ "check_frq": "code/functions/check_frq.R",
+ "check_n_eff": "code/functions/check_n_eff.R",
+
+ "_comment3": "Input files for pgs_model.R",
+ "dosage_path": "test_data/dosage.rds",
+ "hmap_path": "data/hapmap3+",
+ "ld_blocks_path": "test_data/LD_with_blocks_chr"
+}
