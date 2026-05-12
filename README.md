@@ -8,6 +8,9 @@ This repository contains a scalable and reproducible pipeline for harmonising GW
 
 Hansen et al. Characterising the genetic architecture of thousands of complex traits from public GWAS summary statistics.
 
+# IMPORTANT <br>
+
+Download ldref_with_blocks.zip (from here https://figshare.com/articles/dataset/European_LD_reference_with_blocks_/19213299) and unzip in the data/ld_blocks folder. 
 
 ## Overview
 
