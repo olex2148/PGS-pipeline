@@ -1,11 +1,17 @@
 # PGS-pipeline
 Pipeline using [gwf workflow](https://gwf.app/) and [LDpred2-auto](https://privefl.github.io/bigsnpr/articles/LDpred2.html) 
 
+
 This repository contains a scalable and reproducible pipeline for harmonising GWAS summary statistics and estimating key parameters of genetic architecture using LDpred2-auto. The pipeline was developed for the study:
+
+
 
 Hansen et al. Characterising the genetic architecture of thousands of complex traits from public GWAS summary statistics.
 
+
 Overview
+
+
 
 The pipeline enables systematic estimation of:
 
