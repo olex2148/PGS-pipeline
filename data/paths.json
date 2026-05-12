@@ -1,6 +1,6 @@
 {
  "_comment": "Python paths",
- "sumstat_folder": "data/sumstats/test",
+ "sumstat_folder": "data/sumstats/*",
  "work_dir": "~/[PATH TO YOUR WORK DIRECTORY]",
 
  "_comment2": "Files for munge_sumstats.R",
