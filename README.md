@@ -10,7 +10,7 @@ Hansen et al. Characterising the genetic architecture of thousands of complex tr
 
 # IMPORTANT <br>
 
-Download ldref_with_blocks.zip (from here https://figshare.com/articles/dataset/European_LD_reference_with_blocks_/19213299) and unzip in the data/ld_blocks folder. 
+Download [map_hm3_plus.rds](https://figshare.com/articles/dataset/LD_reference_for_HapMap3_/21305061) and place it in the data/hapmap3+ folder. Then download [ldref_with_blocks.zip](https://figshare.com/articles/dataset/European_LD_reference_with_blocks_/19213299) and unzip in the data/ld_blocks folder.
 
 ## Overview
 
