@@ -19,7 +19,7 @@ The pipeline enables systematic estimation of:
 - PGS using LDpred2-auto and a reimplementation of lassosum
 - SNP-based heritability (h²)
 - Polygenicity (p)
-- Frequency-dependent effect size parameter (α)
+- Selection parameter (α)
 - Inferred predictive performance (R²)
 
 It operates on publicly available GWAS summary statistics (e.g. from the GWAS Catalog) and applies standardised quality control, harmonisation, and model fitting within a unified framework.
