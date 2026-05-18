@@ -16,6 +16,7 @@ Download [map_hm3_plus.rds](https://figshare.com/articles/dataset/LD_reference_f
 
 The pipeline enables systematic estimation of:
 
+- PGS using LDpred2-auto and a reimplementation of lassosum
 - SNP-based heritability (h²)
 - Polygenicity (p)
 - Frequency-dependent effect size parameter (α)
