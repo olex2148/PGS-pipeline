@@ -23,6 +23,7 @@ The pipeline enables systematic estimation of:
 - Inferred predictive performance (R²)
 
 It operates on publicly available GWAS summary statistics (e.g. from the GWAS Catalog) and applies standardised quality control, harmonisation, and model fitting within a unified framework.
+The input format can vary; we are using MungeSumstats which detects input format akin to fread. 
 
 ## Requirements: 
 
