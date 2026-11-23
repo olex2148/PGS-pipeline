@@ -13,11 +13,13 @@
 # BiocManager::install("MungeSumstats")
 # 
 # Installing ref genomes
-# options(timeout=2000)
-# BiocManager::install("SNPlocs.Hsapiens.dbSNP155.GRCh38")
-# BiocManager::install("BSgenome.Hsapiens.NCBI.GRCh38")
-# BiocManager::install("SNPlocs.Hsapiens.dbSNP155.GRCh37")
-# BiocManager::install("BSgenome.Hsapiens.1000genomes.hs37d5")
+ options(timeout=2000)
+ #BiocManager::install("SNPlocs.Hsapiens.dbSNP155.GRCh38")
+ #BiocManager::install("BSgenome.Hsapiens.NCBI.GRCh38")
+ #BiocManager::install("SNPlocs.Hsapiens.dbSNP155.GRCh37")
+ #BiocManager::install("BSgenome.Hsapiens.1000genomes.hs37d5")
+
+print("Starting")
 
 # Libs ----------------------------------------------------------------------------
 suppressPackageStartupMessages({
@@ -42,12 +44,15 @@ source(paths$snp_match_format)
 source(paths$z_to_beta)
 source(paths$check_frq)
 source(paths$check_n_eff)
+chain_file <- paths$chain_file #Noa, add the chain file downloaded from Ensembl
 # sumstats = read_sumstats(paths$test_path) # For testing
+
+
 
 # Command line arguments for this script
 args <- commandArgs(trailingOnly = TRUE)
-# name <- (sub("^.*/", "", args[1])) # DELETE
 sumstats <- read_sumstats(args[1])  # This function does not work with vcf files. Such files should be read in with fread and saved in a proper format
+
 output_path <- args[2]
 res_folder <- args[3]
 
@@ -80,6 +85,8 @@ if(!is.na(accession_id)) {
 model_info_df <- create_model_info(accession_id = accession_id) %>% 
   mutate(ID = base_name,
          m_input = nrow(sumstats))
+         
+print("Entering Standarization")
 
 # Standardizing header --------------------------------------------------------------------------------------------------
 # Discarding non-harmonized columns where harmonized version exists
@@ -95,54 +102,196 @@ sumstats <- standardise_header(sumstats, mapping_file = sumstatsColHeaders, retu
 colnames(sumstats)
 
 # Inferring reference genome and performing lift_over if necessary -------------------------------------------------------
+
+
+print("Passed Standarization")
+
 # If SNP col is chr:pos
-if("SNP" %in% colnames(sumstats) & !"RSID" %in% colnames(sumstats)){
-  if(all(grepl(":", sumstats$SNP))) { 
-    sumstats <- tidyr::separate(sumstats,                                        # SLOW
-                                col = SNP, into = c("CHR", "BP"), sep = ":", 
-                                convert = TRUE, extra = "drop")                  # If the col contains more than one : - e.g. chr:pos:a0:a1, :a0:a1 is dropped
+#if("SNP" %in% colnames(sumstats) & !"RSID" %in% colnames(sumstats)){
+#  if(all(grepl(":", sumstats$SNP))) { 
+#    sumstats <- tidyr::separate(sumstats,                                        # SLOW
+#                                col = SNP, into = c("CHR", "BP"), sep = ":", 
+#                                convert = TRUE, extra = "drop")                  # If the col contains more than one : - e.g. chr:pos:a0:a1, :a0:a1 is dropped
+#  }
+#}
+
+
+#SNP col is chr:pos (Noa) -----------------------------------------------------------------------------------
+
+if ("SNP" %in% names(sumstats) &&
+    !"RSID" %in% names(sumstats) &&
+    !"CHR" %in% names(sumstats) &&
+    !"BP" %in% names(sumstats)) {
+
+  colon_present <- grepl(":", sumstats$SNP, fixed = TRUE)
+
+  if (all(colon_present)) {
+
+
+    snp_position <- match("SNP", names(sumstats))
+
+    sumstats[, c("CHR", "BP") := data.table::tstrsplit(
+      SNP,
+      ":",
+      fixed = TRUE,
+      keep = 1:2,
+      type.convert = TRUE
+    )]
+
+    sumstats[, SNP := NULL]
+
+    # Put CHR and BP where SNP originally appeared
+    old_names <- setdiff(names(sumstats), c("CHR", "BP"))
+
+    data.table::setcolorder(
+      sumstats,
+      append(old_names, c("CHR", "BP"), after = snp_position - 1L)
+    )
+
+    rm(colon_present)
+    gc()
   }
 }
 
-# if(all(c("SNP", "CHR", "BP") %in% colnames(sumstats))) {  # MungeSumstats needs these three cols to infer ref
-#   ref_genome <- get_genome_builds(sumstats_list = list(ss1 = sumstats))$ss1
-# 
-#   if(ref_genome != "GRCH37") {
-#     sumstats <- liftover(sumstats_dt = sumstats,
-#                          ref_genome = ref_genome,
-#                          convert_ref_genome = "GRCh37")
-#   }
-# }
+
+
+
+#Not able to use if the collumn SNP is not the RSID. You can take this part out if you know that is GRCH37. As it takes some time.
+
+  #  if(all(c("SNP", "CHR", "BP") %in% colnames(sumstats))) {  # MungeSumstats needs these three cols to infer ref
+  #    ref_genome <- get_genome_builds(sumstats_list = list(ss1 = sumstats))$ss1
+  #  
+  #    if(ref_genome != "GRCH37") {
+  # 
+  #   # Check that the local chain file exists
+  #   if (!file.exists(chain_file)) {
+  #     stop("Chain file not found: ", chain_file)
+  #   }
+  # 
+  #   sumstats[, ROW_ID_LIFTOVER := .I]
+  # 
+  #   coords <- sumstats[, .(
+  #     ROW_ID_LIFTOVER,
+  #     CHR,
+  #     BP,
+  #     SNP
+  #   )]
+  # 
+  #   chunk_size <- 7500000L
+  # 
+  #   chunk_starts <- seq.int(
+  #     from = 1L,
+  #     to = nrow(coords),
+  #     by = chunk_size
+  #   )
+  # 
+  #   lifted_chunks <- vector(
+  #     mode = "list",
+  #     length = length(chunk_starts)
+  #   )
+  # 
+  #   for (i in seq_along(chunk_starts)) {
+  # 
+  #     first_row <- chunk_starts[i]
+  #     last_row <- min(
+  #       first_row + chunk_size - 1L,
+  #       nrow(coords)
+  #     )
+  # 
+  #     message(
+  #       "Lifting chunk ",
+  #       i,
+  #       " of ",
+  #       length(chunk_starts),
+  #       ": rows ",
+  #       first_row,
+  #       "–",
+  #       last_row
+  #     )
+  # 
+  #     coords_chunk <- coords[first_row:last_row]
+  # 
+  #     lifted_chunks[[i]] <- MungeSumstats::liftover(
+  #       sumstats_dt = coords_chunk,
+  #       ref_genome = ref_genome,
+  #       convert_ref_genome = "GRCh37",
+  #       local_chain = chain_file,
+  #       chrom_col = "CHR",
+  #       start_col = "BP",
+  #       end_col = "BP"
+  #     )
+  # 
+  #     rm(coords_chunk)
+  #     gc()
+  #   }
+  # 
+  #   coords_lifted <- data.table::rbindlist(
+  #     lifted_chunks,
+  #     use.names = TRUE,
+  #     fill = TRUE
+  #   )
+  #     colnames(coords)
+  #   rm(lifted_chunks, coords)
+  #   gc()
+  #   
+  # }
+  # }
+
 
 # Some manual checks ---------------------------------------------------------------------------------------------------
 
-assert("Less than 500K variants in initial summary statistic",
+assert("Less than 5K variants in initial summary statistic",
        nrow(sumstats) > 5000)
 
 # Small edits for snp_match format --
+
+
 sumstats <- snp_match_format(sumstats)
+
 
 # Allele frequency --
 check_frq_res <- check_frq(sumstats, sample_size)
 
+
 sumstats <- check_frq_res["sumstats"]$sumstats
 sample_size <- check_frq_res["sample_size"]$sample_size
+
 
 rm(check_frq_res) # To reduce space consumption, since R can't unpack multiple return values
 
 # Effective population size ---
 check_n_eff_res <- check_n_eff(sumstats, sample_size, model_info_df)
+message("Finished check_n_eff")
 
 sumstats <- check_n_eff_res["sumstats"]$sumstats
 model_info_df <- check_n_eff_res["model_info"]$model_info
+
 
 rm(check_n_eff_res) # To reduce space consumption, since R can't unpack multiple return values
 
 # Making sure its in the sumstats 
 # - otherwise should be added manually
-# sumstats$n <- n 
+#sumstats$n <- 37367
+
+#In case that we use the documentation we can retrieve it from there (Noa)
+documentation <- length(args) >= 6 && args[6] == "true"
+if(documentation && !any(c("n_eff", "n") %in% colnames(sumstats))){
+    documented_n_eff <- suppressWarnings(as.numeric(args[4]))
+    documented_n <- suppressWarnings(as.numeric(args[5]))
+if (is.finite(documented_n_eff) && documented_n_eff > 0) {
+    sumstats$n <- documented_n_eff
+    message("Using N_eff from the documentation: ", documented_n_eff)
+    } else if (is.finite(documented_n) && documented_n > 0) {
+    sumstats$n <- documented_n
+    message("Using N_sumstats from the documentation: ", documented_n)
+    } else { stop("No n_eff or n column in the summary statistics, ", "and no usable N_eff or N_sumstats in the documentation for ", basename(args[1]))
+    }}
+
+
+
 assert("No effective population size in parsed sumstats",
        "n_eff" %in% colnames(sumstats) | "n" %in% colnames(sumstats))
+      
 
 # Other effect size than beta -------------------------------------------------------------------------------------------------------------
 # Odds ratio
@@ -151,25 +300,43 @@ sumstats <- or_to_beta(sumstats)
 # Z score
 sumstats <- z_to_beta(sumstats)
 
+cat("colnames before HapMap3")
+
+colnames(sumstats)
+
+
+
 # Finding Hapmap overlap with sumstats -----------------------------------------------------------------------------------
 # Reading in HapMap3+ 
+
+print("Entering HapMap")
+
+
+
 info <- readRDS(paths$hapmap_path)
 
+
 # Finding sumstats/HapMap3+ overlap
-snp_info <- snp_match(sumstats, info, match.min.prop = 0.001, join_by_pos = FALSE) %>%
+
+
+snp_info <- snp_match(sumstats, info, match.min.prop = 0.001, join_by_pos = FALSE) %>% #join_by_pos = join_by_pos_value
   select(-c(pos_hg18, pos_hg38))
 
 cat(nrow(snp_info), "variants in overlap with HapMap3+. \n")
+
 
 # If frq still not in sumstats, use af_UKBB 
 if(!"frq" %in% colnames(snp_info)) { 
   snp_info$frq = snp_info$af_UKBB
 }
 
+
 # Saving in model info
 model_info_df$m_hapmap <-  nrow(snp_info)
 
 df_beta <- snp_info
+
+print("Hapmap done")
 
 # QC -------------------------------------------------------------------------------------------------------------------------------------
 if("p" %in% colnames(snp_info)) {
@@ -230,14 +397,14 @@ cat(nrow(df_beta), "variants remaining following QC. \n")
 # Reading in iPSYCH data
 dosage <- snp_attach(paths$dosage_path) 
 dosage$map <- dosage$map %>% 
-  rename("chr" = "chromosome", "pos" = "physical.pos", "a0" = "allele1", "a1" = "allele2") # Suits test data, not iPSYCh. For iPSYCH use: rename("chr" = "CHR", "pos" = "POS", "a0" = "a1", "a1" = "a2")
+  rename("chr" = "CHR", "pos" = "POS", "a0" = "a1", "a1" = "a2")
 
 # Finding iPSYCH overlap
 in_test <- vctrs::vec_in(df_beta[, c("chr", "pos")], dosage$map[, c("chr", "pos")])
 df_beta <- df_beta[in_test, ]                          
 
 # Making sure there is not no variants in sumstats ----------------------------------------------------------------------
-assert("Less than XK variants remaining in summary statistics following QC and Hapmap3+/[genotype] overlap.",
+assert("Less than 5K variants remaining in summary statistics following QC and Hapmap3+/[genotype] overlap.",
        nrow(df_beta) > 5000)
 cat(nrow(df_beta), "variants remaining after restricting to [genotype] variants. \n")
 

@@ -1,4 +1,12 @@
 # PGS-pipeline
+
+This repository is an Aarhus University adaptation of Ole Sahlholdt Hansen’s
+[PGS-pipeline](https://github.com/olex2148/PGS-pipeline).
+
+Ainhoa Sánchez extended the original LDpred2-auto workflow to use the AU
+documentation workbook, name outputs by `PGS_code`, run automated model QC,
+and update the AU summary statistics library.
+
 Pipeline using [gwf workflow](https://gwf.app/) and [LDpred2-auto](https://privefl.github.io/bigsnpr/articles/LDpred2.html) 
 
 
@@ -7,6 +15,8 @@ This repository contains a scalable and reproducible pipeline for harmonising GW
 
 
 Hansen et al. Characterising the genetic architecture of thousands of complex traits from public GWAS summary statistics.
+
+
 
 # IMPORTANT <br>
 

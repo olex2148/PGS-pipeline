@@ -37,7 +37,7 @@ info <- readRDS(paths$hapmap_path)
 # Reading in [genotype] data
 dosage <- snp_attach(paths$dosage_path) 
 dosage$map <- dosage$map %>% 
-  rename("chr" = "chromosome", "pos" = "physical.pos", "a0" = "allele1", "a1" = "allele2") # Suits test data, not iPSYCh. For iPSYCH use: rename("chr" = "CHR", "pos" = "POS", "a0" = "a1", "a1" = "a2")
+  rename("chr" = "CHR", "pos" = "POS", "a0" = "a1", "a1" = "a2")
 
 # Reading in parsed sumstats
 # df_beta = readRDS(paths$test_parsed) # For testing
@@ -50,11 +50,25 @@ if("n" %in% colnames(df_beta) & !"n_eff" %in% colnames(df_beta)){df_beta$n_eff =
 
 ld_size <- nrow(info) #snp_ldsc won't accept nrow(info) directly
 ldsc <- with(df_beta, snp_ldsc(ld, ld_size = ld_size,
-                               chi2 = (beta / beta_se)^2, 
+                               chi2 = (beta / beta_se)^2,
                                sample_size = n_eff,
                                ncores = nb_cores()))
 
 h2_init <- ldsc[["h2"]]
+h2_init_se <- ldsc[["h2_se"]] #Noa add for future check
+h2_init_z <- h2_init / h2_init_se
+
+# LDSC ratio added for future check (Noa)
+mean_chi2 <- mean(
+  (df_beta$beta / df_beta$beta_se)^2,
+  na.rm = TRUE
+)
+
+ldsc_ratio <- ifelse(
+  is.finite(mean_chi2) & mean_chi2 > 1,
+  (ldsc[["int"]] - 1) / (mean_chi2 - 1),
+  NA_real_
+)
 cat("LDSC-estimated heritability on the observed scale:", h2_init, "\n")
 
 # Reading in LD blocks -----------------------------------------------------------------------------------------------
@@ -129,6 +143,7 @@ q <- plot_grid(
   ncol = 1, align = "hv"
 )
 
+
 ggsave(paste0(base_path, "_1st_kept_chain.jpeg"), q)
 
 # Saving auto parameters -------------------------------------------------------------------------------------------
@@ -169,6 +184,20 @@ params <- attr(beta_lassosum, "grid_param")
 scale <- with(df_beta, sqrt(n_eff * beta_se^2 + beta^2))
 beta_hat <- df_beta$beta / scale
 
+#Noa check
+
+table(
+  is.na(df_beta$p),
+  df_beta$p < 0,
+  df_beta$p > 1,
+  useNA = "ifany"
+)
+
+summary(df_beta$p)
+
+df_beta %>%
+  filter(is.na(p) | p < 0 | p > 1 | is.infinite(p))
+
 fdr <- fdrtool::fdrtool(df_beta$p, statistic = "pvalue", plot = FALSE)
 beta_hat_shrunk <- beta_hat * (1 - fdr$lfdr)
 
@@ -195,10 +224,14 @@ saveRDS(list(ldsc = ldsc, ldpred2 = multi_auto, shrinkage_coef = coef_shrink, la
 model_info_df <- read.csv(model_info, sep = "\t")
 
 model_info_df$h2_init <- h2_init
+model_info_df$h2_init_se <- h2_init_se #Noa add
+model_info_df$h2_init_z <- h2_init / h2_init_se #Noa add
 model_info_df$h2_auto <- quant_h2[1]
 model_info_df$h2_2.5 <- quant_h2[2]
 model_info_df$h2_97.5 <- quant_h2[3]
 model_info_df$h2_median <- median(all_h2)
+model_info_df$mean_chi2 <- mean_chi2 #Noa add
+model_info_df$ldsc_ratio <- ldsc_ratio #Noa add
 model_info_df$p_auto <- quant_p[1]
 model_info_df$p_2.5 <- quant_p[2]
 model_info_df$p_97.5 <- quant_p[3]
@@ -278,6 +311,5 @@ cat("\n Finished computing scores. Models, auto model parameters, model info, an
 
 # Deleting corr file to save space
 file.remove(paste0(tmp, ".sbk"))
-
 
 
